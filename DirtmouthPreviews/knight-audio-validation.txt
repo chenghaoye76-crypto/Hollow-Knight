@@ -1,0 +1,5 @@
+PASS: all 17 existing audio assets resolve.
+PASS: actual jump, double jump, wall jump and dash callbacks play action audio.
+PASS: slash, enemy/terrain impacts, damage, hard landing and rest audio playback.
+PASS: running/idle, wall slide enter/exit, pause/resume and disabled-controller loop cleanup.
+PASS: Sound Volume routing, death feedback and audio teardown.

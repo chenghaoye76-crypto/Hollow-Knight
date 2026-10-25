@@ -1,0 +1,512 @@
+using System;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D), typeof(Animator))]
+public class PlayerController : MonoBehaviour
+{
+    [Header("移动参数")]
+    [SerializeField] private float moveSpeed = 8.3f;
+    [SerializeField] private float walkSpeed = 6f;
+    private bool walkingMode;
+    [Header("跳跃参数")]
+    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float jumpHoldForce = 15.7f;
+    [SerializeField] private float maxJumpHoldTime = 0.2f;
+    [SerializeField] private float extraJumpHoldTime = 0.12f;
+    [SerializeField] private int extraJumps = 1;
+    [SerializeField] private float coyoteTime = 0.1f;
+    [SerializeField] private float jumpBufferTime = 0.12f;
+    [SerializeField, Range(0f, 1f)] private float jumpReleaseMultiplier = 0.45f;
+    [Header("螳螂爪（默认已获得）")]
+    [SerializeField] private bool hasMantisClaw = true;
+    [SerializeField] private float wallSlideSpeed = 2.5f;
+    [SerializeField] private Vector2 wallJumpVelocity = new Vector2(9f, 15.7f);
+    [SerializeField] private float wallJumpControlLock = 0.16f;
+    [SerializeField] private float wallJumpGraceTime = 0.1f;
+    [Header("地形探测")]
+    [SerializeField] private LayerMask terrainMask = 1 << 6;
+    [SerializeField] private float contactDistance = 0.05f;
+    [Header("冲刺参数")]
+    [SerializeField] private float dashSpeed = 20f;
+    [SerializeField] private float dashDuration = 0.28f;
+    [SerializeField] private float dashCooldown = 0.6f;
+    [SerializeField] private int maxDashCount = 1;
+    [SerializeField] private float hurtForce = 16f;
+    [Header("攻击参数")]
+    [SerializeField] private int attackDamage = 5;
+    [SerializeField] private float attackTime = 0.34f;
+    [Header("依赖脚本")]
+    [SerializeField] private GameObject attackPrefab;
+    [SerializeField] private GameObject upAttackPrefab;
+    [SerializeField] private GameObject downAttackPrefab;
+    [SerializeField] private InputAction movementAction;
+    [SerializeField] private InputAction jumpAction;
+    [SerializeField] private InputAction dashAction;
+    [SerializeField] private InputAction attackAction;
+    [SerializeField] private InputAction upAttackAction;
+    [SerializeField] private InputAction downAttackAction;
+    [Header("速度限制")]
+    [SerializeField] private float maxUpSpeed = 20.9f;
+    [SerializeField] private float maxDownSpeed = 20.9f;
+    private Rigidbody2D body;
+    private BoxCollider2D bodyCollider;
+    private Animator animator;
+    private SpriteRenderer spriteRenderer;
+    private bool authoredFlipX;
+    private float wallJumpAnimationDuration = 0.25f;
+    private PlayerHealth health;
+    private KnightAudio knightAudio;
+    private KnightSpells spells;
+    private ContactFilter2D terrainFilter;
+    private PhysicsMaterial2D authoredMaterial, movementMaterial;
+    private readonly RaycastHit2D[] hits = new RaycastHit2D[16];
+    private Vector3 authoredScale;
+    private float gravity, moveInput;
+    private bool facingRight, grounded, wallSliding, jumpHeld, jumpReleased, dead;
+    private bool dashQueued;
+    private float jumpBuffer, groundGrace, wallGrace, holdRemaining;
+    private float dashRemaining, dashCooldownRemaining, wallLockRemaining;
+    private float hurtRemaining, recoilRemaining, attackCooldownRemaining, attackAnimationRemaining;
+    private float specialJumpRemaining, landRemaining;
+    private float recoilDirection, dashDirection, wallJumpDirection;
+    private int wallSide, lastWallSide, remainingJumps, remainingDashes;
+    private string attackAnimation, specialJumpAnimation;
+    private int currentAnimation;
+    private bool originalStateMachine, supplementalPose;
+    private Action deathCallback;
+    private Coroutine deathCoroutine;
+
+    public bool HasMantisClaw { get => hasMantisClaw; set => hasMantisClaw = value; }
+    public bool IsGrounded => grounded;
+    public float HorizontalMoveSpeed => KnightMovementArea.RequiresWalking(this) ? walkSpeed : moveSpeed;
+    public bool IsWallSliding => wallSliding;
+    public bool IsDashing => dashRemaining > 0f;
+    public bool IsHurt => hurtRemaining > 0f;
+    public bool IsCastingSpell => spells != null && spells.IsBusy;
+    public int FacingDirection => facingRight ? 1 : -1;
+    public bool CanCastSpell => enabled && !dead && !IsHurt && !IsDashing && attackAnimationRemaining <= 0f;
+    public bool CanSave => body != null && grounded && Mathf.Abs(body.linearVelocity.y) < 0.1f &&
+        !dead && hurtRemaining <= 0f && recoilRemaining <= 0f && !IsDashing &&
+        (health == null || health.CurrentHealth > 0) && (spells == null || !spells.IsBusy);
+
+    private void Awake()
+    {
+        body = GetComponent<Rigidbody2D>();
+        bodyCollider = GetComponent<BoxCollider2D>();
+        animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null) authoredFlipX = spriteRenderer.flipX;
+        health = GetComponent<PlayerHealth>();
+        knightAudio = GetComponent<KnightAudio>();
+        if (knightAudio == null) knightAudio = gameObject.AddComponent<KnightAudio>();
+        if (GetComponent<PlayerSoul>() == null) gameObject.AddComponent<PlayerSoul>();
+        spells = GetComponent<KnightSpells>();
+        if (spells == null) spells = gameObject.AddComponent<KnightSpells>();
+        if (GetComponent<KnightSoulHUD>() == null) gameObject.AddComponent<KnightSoulHUD>();
+        gravity = body.gravityScale;
+        authoredMaterial = bodyCollider.sharedMaterial;
+        movementMaterial = new PhysicsMaterial2D("Knight movement") { friction = 0f, bounciness = 0f };
+        bodyCollider.sharedMaterial = movementMaterial;
+        authoredScale = transform.localScale;
+        facingRight = authoredScale.x < 0f; // 原素材面朝左。
+        body.interpolation = RigidbodyInterpolation2D.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        terrainFilter = new ContactFilter2D { useTriggers = false };
+        terrainFilter.SetLayerMask(terrainMask);
+        var motion = Resources.Load<RuntimeAnimatorController>("KnightMotion");
+        if (animator.runtimeAnimatorController == null && motion != null) animator.runtimeAnimatorController = motion;
+        foreach (var parameter in animator.parameters)
+            if (parameter.name == "MoveChange") originalStateMachine = true;
+        if (animator.runtimeAnimatorController != null)
+            foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                if (clip.name == "SlideJump") wallJumpAnimationDuration = clip.length;
+        remainingJumps = extraJumps;
+        remainingDashes = maxDashCount;
+        movementAction ??= new InputAction("Movement");
+        jumpAction ??= new InputAction("Jump");
+        dashAction ??= new InputAction("Dash");
+        attackAction ??= new InputAction("Attack");
+        upAttackAction ??= new InputAction("Up Attack");
+        downAttackAction ??= new InputAction("Down Attack");
+    }
+    private void OnEnable()
+    {
+        GameOptions.ConfigureInput(movementAction, jumpAction, dashAction, attackAction, upAttackAction, downAttackAction);
+        GameOptions.Changed += RebindInput;
+    }
+    private void Start() => SaveGameManager.Instance.RegisterPlayer(this);
+    private void RebindInput() => GameOptions.ConfigureInput(movementAction, jumpAction, dashAction, attackAction, upAttackAction, downAttackAction);
+    private void OnDisable()
+    {
+        if (spells != null) spells.Cancel();
+        GameOptions.Changed -= RebindInput;
+        foreach (var action in new[] { movementAction, jumpAction, dashAction, attackAction, upAttackAction, downAttackAction }) action?.Disable();
+        jumpBuffer = holdRemaining = wallGrace = groundGrace = 0f;
+        dashRemaining = wallLockRemaining = 0f;
+        dashQueued = jumpHeld = jumpReleased = wallSliding = false;
+        if (spriteRenderer != null) spriteRenderer.flipX = authoredFlipX;
+        if (body != null) body.gravityScale = gravity;
+    }
+    private void OnDestroy()
+    {
+        foreach (var action in new[] { movementAction, jumpAction, dashAction, attackAction, upAttackAction, downAttackAction }) action?.Dispose();
+        if (bodyCollider != null && bodyCollider.sharedMaterial == movementMaterial) bodyCollider.sharedMaterial = authoredMaterial;
+        if (movementMaterial != null) Destroy(movementMaterial);
+    }
+    private void Update()
+    {
+        if (dead || Time.timeScale <= 0f) return;
+        if (spells != null) spells.ReadInput();
+        if (spells != null && spells.IsBusy) return;
+        moveInput = movementAction.ReadValue<Vector2>().x;
+        jumpHeld = jumpAction.IsPressed();
+        if (jumpAction.WasPressedThisFrame()) jumpBuffer = jumpBufferTime;
+        if (jumpAction.WasReleasedThisFrame()) jumpReleased = true;
+        if (dashAction.WasPressedThisFrame()) dashQueued = true;
+        if (hurtRemaining <= 0f && !IsDashing) ReadAttack();
+    }
+    private void FixedUpdate()
+    {
+        if (dead) return;
+        float dt = Time.fixedDeltaTime;
+        walkingMode = KnightMovementArea.RequiresWalking(this);
+        TickTimers(dt);
+        ProbeTerrain();
+        SyncAnimatorParameters();
+        if (spells != null && spells.TickPhysics(dt)) return;
+        if (hurtRemaining > 0f)
+        {
+            jumpBuffer = holdRemaining = 0f;
+            dashQueued = false;
+            wallSliding = false;
+            UpdateAnimation();
+            return;
+        }
+        if (dashQueued && !IsDashing && dashCooldownRemaining <= 0f && remainingDashes > 0) BeginDash();
+        dashQueued = false;
+        if (IsDashing)
+        {
+            body.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
+            UpdateAnimation();
+            return;
+        }
+        body.gravityScale = gravity;
+        if (jumpBuffer > 0f) TryJump();
+        if (jumpReleased)
+        {
+            holdRemaining = 0f;
+            if (body.linearVelocity.y > 0f) body.linearVelocityY *= jumpReleaseMultiplier;
+            jumpReleased = false;
+        }
+        if (jumpHeld && holdRemaining > 0f)
+        {
+            body.linearVelocityY = Mathf.Max(jumpForce, jumpHoldForce);
+            holdRemaining = Mathf.Max(0f, holdRemaining - dt);
+        }
+        else holdRemaining = 0f;
+        float horizontal = moveInput * (walkingMode ? walkSpeed : moveSpeed);
+        if (wallLockRemaining > 0f) horizontal = wallJumpDirection * wallJumpVelocity.x;
+        else if (recoilRemaining > 0f) horizontal = recoilDirection * 3.75f;
+        body.linearVelocityX = horizontal;
+        wallSliding = hasMantisClaw && !grounded && wallSide != 0 && wallLockRemaining <= 0f &&
+            recoilRemaining <= 0f && body.linearVelocity.y <= 0f && moveInput * wallSide > 0.1f;
+        if (wallSliding)
+        {
+            body.linearVelocityY = Mathf.Max(body.linearVelocity.y, -wallSlideSpeed);
+            holdRemaining = 0f;
+            SetFacing(wallSide > 0);
+        }
+        else if (wallLockRemaining <= 0f && recoilRemaining <= 0f && Mathf.Abs(moveInput) > 0.1f &&
+            !(specialJumpAnimation == "SlideJump" && specialJumpRemaining > 0f && attackAnimationRemaining <= 0f && !grounded))
+            SetFacing(moveInput > 0f);
+        body.linearVelocityY = Mathf.Clamp(body.linearVelocity.y, -maxDownSpeed, maxUpSpeed);
+        UpdateAnimation();
+    }
+    private void TickTimers(float dt)
+    {
+        jumpBuffer -= dt; groundGrace -= dt; wallGrace -= dt;
+        dashCooldownRemaining -= dt; wallLockRemaining -= dt;
+        hurtRemaining -= dt; recoilRemaining -= dt;
+        attackCooldownRemaining -= dt; attackAnimationRemaining -= dt;
+        specialJumpRemaining -= dt; landRemaining -= dt;
+        if (dashRemaining > 0f)
+        {
+            dashRemaining -= dt;
+            if (dashRemaining <= 0f) body.gravityScale = gravity;
+        }
+    }
+    private bool HasSurface(Vector2 direction, bool floor)
+    {
+        int count = bodyCollider.Cast(direction, terrainFilter, hits, contactDistance);
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 normal = hits[i].normal;
+            if (floor ? normal.y > 0.65f : Vector2.Dot(normal, -direction) > 0.8f) return true;
+        }
+        return false;
+    }
+    private void ProbeTerrain()
+    {
+        bool wasGrounded = grounded;
+        grounded = body.linearVelocity.y <= 0.1f && HasSurface(Vector2.down, true);
+        wallSide = HasSurface(Vector2.left, false) ? -1 : HasSurface(Vector2.right, false) ? 1 : 0;
+        if (grounded)
+        {
+            groundGrace = coyoteTime;
+            RefreshAirActions();
+            if (!wasGrounded) { landRemaining = 0.1f; knightAudio?.Land(); }
+        }
+        if (hasMantisClaw && !grounded && wallSide != 0 && wallLockRemaining <= 0f)
+        {
+            wallGrace = wallJumpGraceTime;
+            lastWallSide = wallSide;
+            RefreshAirActions();
+        }
+        if (holdRemaining > 0f && HasSurface(Vector2.up, false))
+        {
+            holdRemaining = 0f;
+            if (body.linearVelocity.y > 0f) body.linearVelocityY = 0f;
+        }
+    }
+    private void RefreshAirActions() { remainingJumps = extraJumps; remainingDashes = maxDashCount; }
+    private void TryJump()
+    {
+        if (grounded || groundGrace > 0f) BeginJump(maxJumpHoldTime, "Jump");
+        else if (hasMantisClaw && wallGrace > 0f && wallLockRemaining <= 0f)
+        {
+            wallJumpDirection = -lastWallSide;
+            wallLockRemaining = wallJumpControlLock;
+            wallGrace = 0f;
+            RefreshAirActions();
+            BeginJump(0f, "SlideJump");
+            body.linearVelocity = new Vector2(wallJumpDirection * wallJumpVelocity.x, wallJumpVelocity.y);
+            SetFacing(wallJumpDirection > 0f);
+        }
+        else if (remainingJumps > 0 && wallLockRemaining <= 0f)
+        {
+            remainingJumps--;
+            BeginJump(extraJumpHoldTime, "DoubleJump");
+        }
+    }
+    private void BeginJump(float holdTime, string animationName)
+    {
+        jumpBuffer = groundGrace = 0f;
+        grounded = wallSliding = false;
+        holdRemaining = holdTime;
+        landRemaining = attackAnimationRemaining = 0f;
+        specialJumpAnimation = animationName;
+        specialJumpRemaining = animationName == "SlideJump" ? wallJumpAnimationDuration : animationName == "DoubleJump" ? 0.22f : 0f;
+        body.linearVelocityY = Mathf.Max(jumpForce, jumpHoldForce);
+        knightAudio?.Jump(animationName);
+        PlayAnimation(animationName, true);
+    }
+    private void BeginDash()
+    {
+        // 滑墙面朝墙，冲刺却应向墙外；同一物理帧刚接触墙也采用墙面法线方向。
+        bool fromWall = hasMantisClaw && !grounded && wallSide != 0 && wallLockRemaining <= 0f &&
+            body.linearVelocity.y <= 0f && (wallSliding || moveInput * wallSide > 0.1f);
+        dashDirection = fromWall ? -wallSide : facingRight ? 1f : -1f;
+        SetFacing(dashDirection > 0f);
+        remainingDashes--;
+        dashRemaining = dashDuration;
+        dashCooldownRemaining = dashCooldown;
+        holdRemaining = jumpBuffer = wallLockRemaining = attackAnimationRemaining = specialJumpRemaining = 0f;
+        jumpReleased = wallSliding = false;
+        body.gravityScale = 0f;
+        knightAudio?.Dash();
+        PlayAnimation("Dash", true);
+    }
+    private void SetFacing(bool right)
+    {
+        facingRight = right;
+        transform.localScale = new Vector3((right ? -1f : 1f) * Mathf.Abs(authoredScale.x), authoredScale.y, authoredScale.z);
+    }
+    private void ReadAttack()
+    {
+        if (attackCooldownRemaining > 0f) return;
+        GameObject prefab;
+        Vector3 offset;
+        Quaternion rotation = Quaternion.identity;
+        bool up = upAttackAction.WasPressedThisFrame();
+        bool down = !grounded && downAttackAction.WasPressedThisFrame();
+        if (up) { prefab = upAttackPrefab; offset = new Vector3(0.2f, 0f); attackAnimation = "Up_Attack"; }
+        else if (down) { prefab = downAttackPrefab; offset = new Vector3(0f, -1.23f); attackAnimation = "Down_Attack"; }
+        else if (attackAction.WasPressedThisFrame())
+        {
+            prefab = attackPrefab;
+            offset = new Vector3(facingRight ? 0.5f : -0.5f, 0f);
+            rotation = Quaternion.Euler(0f, facingRight ? 0f : 180f, 0f);
+            attackAnimation = "Attack";
+        }
+        else return;
+        if (prefab == null) return;
+        GameObject attack = Instantiate(prefab, transform.position + offset, rotation);
+        attack.GetComponentInChildren<AttackEffect>()?.Follow(transform);
+        attack.GetComponent<AttackHit>()?.SetPlayer(this);
+        attack.GetComponent<UpAttackHit>()?.SetPlayer(this);
+        attack.GetComponent<DownAttackHit>()?.SetPlayer(this);
+        attackCooldownRemaining = Mathf.Max(0.05f, attackTime);
+        attackAnimationRemaining = Mathf.Min(0.25f, attackCooldownRemaining);
+        knightAudio?.Slash();
+        PlayAnimation(attackAnimation, true);
+    }
+    public void PrepareSpell()
+    {
+        jumpBuffer = holdRemaining = wallLockRemaining = attackAnimationRemaining = specialJumpRemaining = recoilRemaining = 0f;
+        dashQueued = jumpReleased = jumpHeld = wallSliding = false;
+    }
+    public void PlaySpellPose(string state) => PlayAnimation(state, true);
+    // 同一处决定动作优先级，避免移动、落地和攻击逐帧互相重播。
+    private void UpdateAnimation()
+    {
+        if (dead) return;
+        if (originalStateMachine)
+        {
+            SyncAnimatorParameters();
+            if (hurtRemaining > 0f || IsDashing || attackAnimationRemaining > 0f) return;
+            if (wallSliding) { PlayAnimation("Slide"); return; }
+            if (!grounded && specialJumpAnimation == "SlideJump" && specialJumpRemaining > 0f)
+            { PlayAnimation("SlideJump"); return; }
+            if (supplementalPose)
+            {
+                PlayAnimation(grounded ? (Mathf.Abs(moveInput) > .1f ? "Walk" : "Idle") :
+                    body.linearVelocity.y > .1f ? "Jump" : "Fall", true);
+            }
+            if (spriteRenderer != null) spriteRenderer.flipX = authoredFlipX;
+            return;
+        }
+        string state = hurtRemaining > 0f ? "TakeDamage" : IsDashing ? "Dash" :
+            attackAnimationRemaining > 0f ? attackAnimation : wallSliding ? "Slide" :
+            !grounded && specialJumpRemaining > 0f ? specialJumpAnimation :
+            !grounded ? (body.linearVelocity.y > 0.1f ? "Jump" : "Fall") :
+            Mathf.Abs(moveInput) > 0.1f ? (walkingMode ? "Walk" : "Run") : landRemaining > 0f ? "SoftLand" : "Idle";
+        PlayAnimation(state);
+    }
+    private void SyncAnimatorParameters()
+    {
+        if (!originalStateMachine) return;
+        animator.SetInteger("MoveChange", Mathf.Abs(moveInput) > .1f ? (moveInput > 0f ? 1 : -1) : 0);
+        animator.SetBool("IsOnGround", grounded);
+        animator.SetBool("IsFall", !grounded && body.linearVelocity.y <= .1f);
+        animator.SetBool("IsDash", IsDashing);
+        animator.SetBool("WalkOnly", walkingMode);
+        animator.SetFloat("WalkMode", walkingMode ? 1f : 0f);
+    }
+    private void PlayAnimation(string state, bool restart = false)
+    {
+        string path = "Base Layer.";
+        if (originalStateMachine)
+        {
+            SyncAnimatorParameters();
+            if (state == "Jump" || state == "Fall" || state == "DoubleJump" || state == "SoftLand") path += "Jump State Machine.";
+            else if (state == "Attack" || state == "Up_Attack" || state == "Down_Attack") path += "Attack State Machine.";
+        }
+        int hash = Animator.StringToHash(path + state);
+        if (animator.runtimeAnimatorController == null || !animator.HasState(0, hash)) return;
+        // 蹬墙帧的原图面朝右，其他主角动作面朝左；只翻转显示，不改变碰撞与逻辑朝向。
+        if (spriteRenderer != null) spriteRenderer.flipX = authoredFlipX ^ (state == "SlideJump");
+        if (!restart && currentAnimation == hash) return;
+        currentAnimation = hash;
+        supplementalPose = state == "Slide" || state == "SlideJump" || state.StartsWith("Spell", StringComparison.Ordinal);
+        // The authored graph has jump triggers; Dash has no incoming trigger transition.
+        bool doubleJumpFromExtension = state == "DoubleJump" &&
+            (animator.GetCurrentAnimatorStateInfo(0).IsName("Slide") || animator.GetCurrentAnimatorStateInfo(0).IsName("SlideJump"));
+        if (originalStateMachine && !supplementalPose && !doubleJumpFromExtension && (state == "Jump" || state == "DoubleJump"))
+        {
+            animator.ResetTrigger(state);
+            animator.SetTrigger(state);
+            return;
+        }
+        animator.Play(hash, 0, 0f);
+    }
+    public void DealNormalAttackDamage(EnemyController enemy) => ApplyAttackDamage(enemy);
+    public void DealUpAttackDamage(EnemyController enemy) => ApplyAttackDamage(enemy);
+    public void DealDownAttackDamage(EnemyController enemy)
+    {
+        ApplyAttackDamage(enemy);
+        RefreshAirActions(); // 下劈命中刷新空中能力，挥空不刷新。
+    }
+    private void ApplyAttackDamage(EnemyController enemy)
+    {
+        if (enemy != null)
+        {
+            knightAudio?.Hit();
+            var target = enemy.GetComponentInParent<TiktikHealth>();
+            if (target != null && target.CurrentHealth > 0)
+            {
+                target.TakeDamage(attackDamage);
+                GetComponent<PlayerSoul>()?.Add(11);
+            }
+        }
+    }
+    public void PlayTerrainHit() => knightAudio?.Hit(true);
+    public void HitRepel()
+    {
+        if (dead || hurtRemaining > 0f) return;
+        recoilRemaining = 0.18f;
+        recoilDirection = facingRight ? -1f : 1f;
+        body.linearVelocityX = recoilDirection * 3.75f;
+    }
+    public void UpHitRepel()
+    {
+        if (dead || hurtRemaining > 0f) return;
+        holdRemaining = 0f;
+        body.linearVelocityY = 0f;
+    }
+    public void DownHitRepel()
+    {
+        if (dead || hurtRemaining > 0f) return;
+        holdRemaining = groundGrace = 0f;
+        grounded = wallSliding = false;
+        body.linearVelocityY = 11.05f;
+        RefreshAirActions();
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy")) TakeDamage();
+    }
+    private void TakeDamage()
+    {
+        if (dead || hurtRemaining > 0f) return;
+        if (spells != null && spells.IsInvulnerable) return;
+        var invincibility = GetComponent<Invincibility>();
+        if (invincibility != null && invincibility.isInvincible) return;
+        invincibility?.Activate(1.3f);
+        health?.TakeDamage(1);
+        if (dead) return;
+        dashRemaining = holdRemaining = wallLockRemaining = attackAnimationRemaining = 0f;
+        body.gravityScale = gravity;
+        wallSliding = false;
+        hurtRemaining = 0.2f;
+        body.linearVelocity = new Vector2(facingRight ? -hurtForce : hurtForce, hurtForce * 0.5f);
+        PlayAnimation("TakeDamage", true);
+    }
+    public void HandleDeath(Action onDeathComplete)
+    {
+        if (dead) return;
+        if (spells != null) spells.Cancel();
+        dead = true;
+        deathCallback = onDeathComplete;
+        enabled = false;
+        body.linearVelocity = Vector2.zero;
+        body.bodyType = RigidbodyType2D.Static;
+        bodyCollider.enabled = false;
+        PlayAnimation("Dead", true);
+        deathCoroutine = StartCoroutine(DelayedDeath());
+    }
+    private IEnumerator DelayedDeath()
+    {
+        yield return new WaitForSeconds(1f);
+        deathCoroutine = null;
+        OnDeathAnimationEnd();
+    }
+    public void OnDeathAnimationEnd()
+    {
+        if (deathCoroutine != null) { StopCoroutine(deathCoroutine); deathCoroutine = null; }
+        var callback = deathCallback;
+        deathCallback = null;
+        callback?.Invoke();
+    }
+}

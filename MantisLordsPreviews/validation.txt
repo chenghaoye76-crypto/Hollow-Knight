@@ -1,0 +1,8 @@
+PASS: scene, sprite sequences, audio, 210/160/160 health, passive seated bosses.
+PASS: challenge, closed cage, first phase and safe-position save lock.
+PASS: dash both directions, drop recovery, nail damage/soul/pogo, spell deduplication and hidden invulnerability.
+PASS: high/low boomerang, blade pogo and automatic phase-one to phase-two transition.
+PASS: synchronized wide and short paired boomerangs.
+PASS: independent second-phase health, last sister, victory bow, projectile cleanup, raised cage and opened passage.
+PASS: deterministic blade trajectories and central healing clearance.
+PASS: boss damage removes one mask and respects hurt/invincibility windows.

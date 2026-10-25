@@ -1,0 +1,18 @@
+PASS: both atmosphere shaders compiled; scene saved with effect component; preview rendered.
+Scene: Assets/Scenes/Dirtmouth.unity
+Blur: 2 texels; animated ground mist; 24 rising bench motes; four white moths per lamp bulb.
+PASS: fog-only rendered pixel difference at +3 seconds = 1.68%; motes and moths excluded. 16 flow preview frames exported.
+Rest bench | town_bench_lit | active=True | order=-3 layer=Default | bounds=Center: (-13.53, 2.54, 0.00), Extents: (1.40, 0.69, 0.10)
+Spiral street lamp | town_lamp_BG | active=True | order=-6 layer=Default | bounds=Center: (-51.00, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Spiral street lamp | town_lamp_BG | active=True | order=-6 layer=Default | bounds=Center: (-24.00, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Spiral street lamp | town_lamp_BG | active=False | order=-6 layer=Default | bounds=Center: (0.90, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Spiral street lamp | town_lamp_BG | active=True | order=-6 layer=Default | bounds=Center: (23.50, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Spiral street lamp | town_lamp_BG | active=True | order=-6 layer=Default | bounds=Center: (52.00, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Spiral street lamp | town_lamp_BG | active=True | order=-6 layer=Default | bounds=Center: (77.00, 3.24, 0.00), Extents: (1.91, 3.24, 0.10)
+Lamp above the central square | lamp_02 | active=False | order=-6 layer=Default | bounds=Center: (-1.40, 4.80, 0.00), Extents: (2.66, 4.80, 0.10)
+Central hazy house | Town_BG_0003_03b | active=False | order=-95 layer=Default | bounds=Center: (-7.00, 4.65, 0.00), Extents: (4.93, 4.35, 0.10)
+Central hazy house | Town_BG_0005_02b | active=False | order=-95 layer=Default | bounds=Center: (0.00, 4.65, 0.00), Extents: (4.71, 4.35, 0.10)
+Central hazy house | Town_BG_0003_03b | active=False | order=-95 layer=Default | bounds=Center: (6.30, 4.65, 0.00), Extents: (4.93, 4.35, 0.10)
+bench | town_bench | active=True | order=-10 layer=Middle | bounds=Center: (-18.51, 0.91, 0.00), Extents: (1.43, 0.70, 0.10)
+Camera: (0.00, 7.44, -20.00) size=7.8
+PASS: verified flowing fog in Play Mode, returned to Edit Mode; fogFlowSpeed saved as 1, zero missing material references.

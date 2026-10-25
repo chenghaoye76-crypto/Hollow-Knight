@@ -1,0 +1,6 @@
+PASS: scene assets, night sky shader, camera, local HUD and audio routing
+PASS: bench healing and return of control
+PASS: traversable collision across nine town sectors
+PASS: open well shaft with solid side walls
+PASS: actual well descent into Game and return to Dirtmouth (no save slot used)
+PASS: five town views captured from actual Play Mode

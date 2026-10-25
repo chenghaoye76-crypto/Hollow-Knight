@@ -1,0 +1,1 @@
+MainMenu configured. Canvas/BGCanvas: 1920x1080, Expand. Menu preview and runtime reuse one prefab. Options and keyboard navigation configured.

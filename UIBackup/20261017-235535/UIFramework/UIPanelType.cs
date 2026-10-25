@@ -1,0 +1,25 @@
+public enum UIPanelType
+{
+    MainMenuPanel,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

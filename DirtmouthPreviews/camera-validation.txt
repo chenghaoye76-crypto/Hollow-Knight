@@ -1,0 +1,4 @@
+PASS: camera follows the Knight in X/Y, with a 0.10s smoothing time and no central dead zone.
+Boundary: cameraColl Center: (-10.00, 4.00, 0.00), Extents: (130.00, 11.00, 0.00)
+PASS: viewport containment at 4:3, 16:9, 21:9; target centred away from edges; moved/scaled boundary; small-boundary fit.
+PASS: entered Play Mode and visually confirmed the Knight is centred in the Game viewport.

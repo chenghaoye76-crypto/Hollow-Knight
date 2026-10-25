@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 278499e1a07a484f959f6e7bb396b48b, type: 3}
+  m_Name: OptionsVisualAssets
+  m_EditorClassIdentifier: Assembly-CSharp::OptionsVisualAssets
+  bodyFont: {fileID: 11400000, guid: 17eef650b54096546b139e34fba77553, type: 2}
+  chineseFont: {fileID: 11400000, guid: 77e00e28eba99834cab01da273372912, type: 2}

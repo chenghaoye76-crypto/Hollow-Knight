@@ -1,0 +1,1 @@
+PASS: five pages, transitions and back navigation, three audio sliders and volume application, bounded slider fill, thirteen keyboard bindings, two-column layout, live key capture, controller disconnection, video links.

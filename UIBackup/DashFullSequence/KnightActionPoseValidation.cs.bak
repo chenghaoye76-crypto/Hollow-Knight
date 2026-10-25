@@ -1,0 +1,114 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+[InitializeOnLoad]
+public static class KnightActionPoseValidation
+{
+    private const BindingFlags Private=BindingFlags.Instance|BindingFlags.NonPublic;
+    static KnightActionPoseValidation()=>EditorApplication.update+=Check;
+    private static void Check()
+    {
+        if(EditorApplication.isCompiling || EditorApplication.isUpdating || !File.Exists("Temp/ValidateKnightActionPoses.request"))return;
+        if(!EditorApplication.isPlaying)
+        {
+            if(!EditorApplication.isPlayingOrWillChangePlaymode){SessionState.SetBool("ActionPoseTestEnteredPlay",true);EditorApplication.EnterPlaymode();}
+            return;
+        }
+        File.Delete("Temp/ValidateKnightActionPoses.request");
+        var report=new List<string>();
+        var previous=SceneManager.GetActiveScene();
+        var scene=SceneManager.CreateScene("Knight action validation",new CreateSceneParameters(LocalPhysicsMode.Physics2D));
+        PlayerController player=null;
+        try
+        {
+            SceneManager.SetActiveScene(scene);
+            var floor=new GameObject("Test floor",typeof(BoxCollider2D)){layer=LayerMask.NameToLayer("Terrain")};
+            floor.transform.position=Vector3.down*.5f;floor.GetComponent<BoxCollider2D>().size=new Vector2(40,1);
+            var actor=new GameObject("Action test knight"){layer=31};actor.SetActive(false);actor.transform.position=new Vector3(0,.81f);
+            var renderer=actor.AddComponent<SpriteRenderer>();renderer.sharedMaterial=Resources.Load<KnightSpellAssets>("KnightSpells").material;renderer.sortingLayerName="Front";renderer.sortingOrder=100;
+            var body=actor.AddComponent<Rigidbody2D>();body.gravityScale=4.84f;body.constraints=RigidbodyConstraints2D.FreezeRotation;
+            actor.AddComponent<BoxCollider2D>().size=new Vector2(.8f,1.6f);
+            var animator=actor.AddComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animation/Knight/Knight.controller");
+            actor.AddComponent<PlayerHealth>();player=actor.AddComponent<PlayerController>();player.enabled=false;actor.SetActive(true);
+            Call(player,"OnEnable");animator.Rebind();animator.Update(0);
+            void Tick(){Call(player,"FixedUpdate");animator.Update(.02f);}
+            bool Is(string name)=>animator.GetCurrentAnimatorStateInfo(0).IsName(name);
+            body.position=new Vector2(0,5);Physics2D.SyncTransforms();
+            typeof(PlayerController).GetMethod("BeginJump",Private).Invoke(player,new object[]{0f,"DoubleJump"});animator.Update(0);
+            var seen=new HashSet<Sprite>{renderer.sprite};
+            for(int i=0;i<16;i++)
+            {
+                body.linearVelocity=new Vector2(0,-2);Tick();
+                Require(Is("DoubleJump"),"Early descent cut off the double-jump wingbeat.");seen.Add(renderer.sprite);
+            }
+            Require(seen.Count==8,"Double jump must display all eight PlayerSprite frames.");
+            Tick();Tick();Require(Is("Fall"),"Completed double jump must return to Fall.");
+            report.Add("PASS: immediate double jump displays all eight wingbeat frames even during early descent, then returns to Fall.");
+            Set(player,"specialJumpRemaining",0f);typeof(PlayerController).GetMethod("BeginDash",Private).Invoke(player,null);
+            var recovery=new HashSet<Sprite>();bool sawRecovery=false;
+            for(int i=0;i<30;i++)
+            {
+                Tick();if(Is("DashRecover")){sawRecovery=true;recovery.Add(renderer.sprite);}
+            }
+            Require(sawRecovery && recovery.Count==4 && !Is("DashRecover") && !Is("Dash"),"Dash must play all four recovery frames, then resume locomotion.");
+            report.Add("PASS: Dash -> four-frame DashRecover -> airborne locomotion; dash and recovery both finish.");
+            body.position=new Vector2(8,.81f);body.linearVelocity=Vector2.zero;Physics2D.SyncTransforms();Tick();
+            var entry=(IEnumerator)typeof(PlayerController).GetMethod("EnterFromBench",Private).Invoke(player,null);
+            Require(entry.MoveNext(),"Entry must lock controls before save/scene registration completes.");
+            Require(entry.MoveNext() && entry.Current is IEnumerator,"Entry must resolve a bench and start waking.");
+            var wake=(IEnumerator)entry.Current;
+            Require(wake.MoveNext(),"Entry must begin on the bench.");animator.Update(0);
+            Require(Is("BenchSleep") && player.IsResting && !body.simulated && !player.CanCastSpell,"Entry sleep must lock control, casting and physics.");
+            var seat=Array.Find(SceneManager.GetActiveScene().GetRootGameObjects(),g=>g.name=="Scene entry bench");
+            Require(seat!=null && seat.GetComponent<SpriteRenderer>().sprite!=null,"Scenes without an authored bench need a visible entry bench.");
+            Require(Mathf.Abs(seat.transform.position.x)<.01f,"Fallback bench must use scene entry position, not an arbitrary restored save position.");
+            seat.layer=31;Capture("BenchSleep",actor.transform.position);
+            Require(wake.MoveNext(),"Sleep must lead to waking.");animator.Update(0);
+            Require(Is("BenchWake"),"Entry must play dedicated BenchWake animation.");
+            var seated=actor.transform.position;
+            animator.Update(player.PoseDuration("BenchWake")*.85f);Call(player,"LateUpdate");
+            var exit=(Vector3)typeof(PlayerController).GetField("benchExitPosition",Private).GetValue(player);
+            Require(Vector3.Distance(actor.transform.position,exit)<=Vector3.Distance(seated,exit),"Wake must ease from the seat toward the standing position.");
+            Capture("BenchWake",actor.transform.position);
+            Require(!wake.MoveNext(),"Wake routine must complete.");entry.MoveNext();Tick();
+            Require(!player.IsResting && body.simulated && Mathf.Abs(body.position.x-seat.transform.position.x)<.01f,"Wake must restore physics and finish next to the bench.");
+            report.Add("PASS: scene entry creates/reuses a bench at the authored spawn, plays Sleep -> Wake, blocks controls and restores physics on the floor.");
+            player.RestOnBench(seat.transform);animator.Update(0);
+            Require(Is("BenchSit") && player.IsResting && !body.simulated,"Rest interaction must start BenchSit.");
+            Capture("BenchSit",actor.transform.position);
+            Call(player,"OnDisable");Require(!player.IsResting && body.simulated,"Disabling a resting knight must restore physics and clear bench state.");
+            report.Add("PASS: resting starts BenchSit, and interruption/disable restores player physics without leaving a frozen knight.");
+        }
+        catch(Exception e){report.Add("FAIL: "+e);Debug.LogException(e);}
+        finally
+        {
+            if(player!=null)Call(player,"OnDisable");
+            foreach(var root in scene.GetRootGameObjects())UnityEngine.Object.DestroyImmediate(root);
+            SceneManager.SetActiveScene(previous);SceneManager.UnloadSceneAsync(scene);
+            File.WriteAllLines("Temp/KnightActionPoseValidation.txt",report);
+            if(SessionState.GetBool("ActionPoseTestEnteredPlay",false)){SessionState.SetBool("ActionPoseTestEnteredPlay",false);EditorApplication.delayCall+=EditorApplication.ExitPlaymode;}
+        }
+    }
+    private static void Set(object target,string field,object value)=>target.GetType().GetField(field,Private).SetValue(target,value);
+    private static void Call(object target,string method)=>target.GetType().GetMethod(method,Private).Invoke(target,null);
+    private static void Require(bool ok,string message){if(!ok)throw new Exception(message);}
+    private static void Capture(string name,Vector3 centre)
+    {
+        var go=new GameObject("Action preview camera",typeof(Camera));var camera=go.GetComponent<Camera>();
+        camera.orthographic=true;camera.orthographicSize=2.4f;camera.cullingMask=1<<31;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.045f,.055f,.09f);
+        go.transform.position=new Vector3(centre.x,1.1f,-10);var target=new RenderTexture(960,540,24);var previous=RenderTexture.active;
+        var image=new Texture2D(960,540,TextureFormat.RGB24,false);
+        try
+        {
+            camera.targetTexture=target;camera.Render();RenderTexture.active=target;image.ReadPixels(new Rect(0,0,960,540),0,0);image.Apply();
+            Directory.CreateDirectory("DirtmouthPreviews/Actions");File.WriteAllBytes("DirtmouthPreviews/Actions/"+name+".png",image.EncodeToPNG());
+        }
+        finally{RenderTexture.active=previous;camera.targetTexture=null;target.Release();UnityEngine.Object.DestroyImmediate(target);UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(go);}
+    }
+}

@@ -1,0 +1,7 @@
+PASS: actual 2D trigger simulation: initially hidden, non-player ignored, enter/re-enter show, multi-collider exit handled, exit/disable hide.
+AttackEffectRoot: 3439 visible changed pixels.
+UpAttackEffectRoot: 5286 visible changed pixels.
+DownAttackEffectRoot: 6410 visible changed pixels.
+PASS: normal/up/down slash prefabs render visible pixels over the actual Dirtmouth scene; screenshots saved.
+PASS: normal/up/down slash roots and hitboxes follow owner translation while preserving the original swing direction and scale.
+PASS: all three slashes survive the first 65ms and destroy themselves after playback.

@@ -1,0 +1,31 @@
+# Unity generated caches and local settings
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Build output
+/[Bb]uild/
+/[Bb]uilds/
+
+# IDE caches and generated solution files
+/.vs/
+/.idea/
+/*.csproj
+/*.sln
+/*.slnx
+/*.suo
+/*.user
+/*.userprefs
+/*.pidb
+/*.booproj
+/*.opendb
+/*.VC.db
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+desktop.ini

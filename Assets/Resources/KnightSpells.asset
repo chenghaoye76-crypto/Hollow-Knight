@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d0c9ce30d09f694b9e7768bb0dd4b01, type: 3}
+  m_Name: KnightSpells
+  m_EditorClassIdentifier: Assembly-CSharp::KnightSpellAssets
+  material: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  projectile:
+  - {fileID: 21300000, guid: 136abf431dc0cb64987252ace1472f67, type: 3}
+  - {fileID: 21300000, guid: 58bd6cd46bf6ebc4e9890eddf80404cc, type: 3}
+  - {fileID: 21300000, guid: d6c024f16d5549943a89e1cfd7e2d55d, type: 3}
+  - {fileID: 21300000, guid: 28fc3e718242e1041ad2e363de4305bc, type: 3}
+  shadeProjectile:
+  - {fileID: 21300000, guid: 78af97b8cd67ad04f9c54b64aaf80b62, type: 3}
+  - {fileID: 21300000, guid: a1c82fb00bd17ed45a189b86a5a810d5, type: 3}
+  - {fileID: 21300000, guid: eaeac63f243a9f24eb8cfcc900d8c48e, type: 3}
+  - {fileID: 21300000, guid: 475c6758c23279248beae20952c167fb, type: 3}
+  - {fileID: 21300000, guid: 60c0be3b5e1fd6246b10cc5588133b7b, type: 3}
+  - {fileID: 21300000, guid: 507aaa8390ace974d9810b93a8871871, type: 3}
+  rings:
+  - {fileID: 21300000, guid: 92257c98e2f2b6840bec6eefcd642b43, type: 3}
+  - {fileID: 21300000, guid: fb38bfa2aedd2484e8b04e6bece03765, type: 3}
+  - {fileID: 21300000, guid: 48c79b43b2e168b48812fb0fd188843c, type: 3}
+  - {fileID: 21300000, guid: 8146f2b8233ac9f4b9f07026cd9145f7, type: 3}
+  - {fileID: 21300000, guid: 63410f1a1b70c1e4aa3cf95b00489400, type: 3}
+  - {fileID: 21300000, guid: 6f8f5d2d8b584934ab106577e9691d96, type: 3}
+  - {fileID: 21300000, guid: 0fe835de7bdc9314591bd44b4fbe78e8, type: 3}
+  - {fileID: 21300000, guid: baa032855ff01844d88e080d1d3227c0, type: 3}
+  - {fileID: 21300000, guid: f179a0553ccdc9b44aa50fd4a7d9a53c, type: 3}
+  - {fileID: 21300000, guid: a064ee87f5857604b8e126f3144b4b65, type: 3}
+  impact:
+  - {fileID: 21300000, guid: 2b5ea2cb8d5709a4bb8ea784f2b3580d, type: 3}
+  - {fileID: 21300000, guid: b80cf34cbf0b20641b5165ab913d1b40, type: 3}
+  - {fileID: 21300000, guid: f09a69f9b78317641bf02421185d20a1, type: 3}
+  - {fileID: 21300000, guid: 9a914ae3c3283f94e98ac33d7972f3d0, type: 3}
+  - {fileID: 21300000, guid: a37be69073dfe9346887ad1f2b63a3e7, type: 3}
+  - {fileID: 21300000, guid: 54df032b72fa7ea4caf26c7dcfe96e35, type: 3}
+  tendrils:
+  - {fileID: 21300000, guid: 5b302f914ba912d46aa16297fe0a3270, type: 3}
+  - {fileID: 21300000, guid: 264dbdf829edbdb48b55f7226dc77ca4, type: 3}
+  focus:
+  - {fileID: 21300000, guid: 16c0d310e0be91948ac11dc23e5a990d, type: 3}
+  - {fileID: 21300000, guid: 9630aae5ae148eb4a99088f55b402f8d, type: 3}
+  - {fileID: 21300000, guid: 1300a824a6085f74c97b9262a6109da0, type: 3}
+  - {fileID: 21300000, guid: 9d5f0ced4d46b3d4aa23d8c76d14cf63, type: 3}
+  - {fileID: 21300000, guid: 218afbc54416f864b8ed5cbc3c65f060, type: 3}
+  - {fileID: 21300000, guid: c814f4b2203faf540b0540f2c99bfd6f, type: 3}
+  - {fileID: 21300000, guid: 20780cce727c39042b84d951a504e76b, type: 3}
+  - {fileID: 21300000, guid: 574da44063dbb4f41bc99bdbb1cc78ef, type: 3}
+  - {fileID: 21300000, guid: d915171b09484c042b70b9c03a2e4aaa, type: 3}
+  - {fileID: 21300000, guid: c44351253a681ab4eb9077cf2869555c, type: 3}
+  - {fileID: 21300000, guid: baef299e9888054438348f2c3bbe14ae, type: 3}
+  - {fileID: 21300000, guid: 0e1baa1c47172e742a17843af9a70cc2, type: 3}
+  - {fileID: 21300000, guid: 59502a16f1dd77a4b8c31111f36eba57, type: 3}
+  focusBurst:
+  - {fileID: 21300000, guid: 74acf009d9638694ca4ec05cff828f91, type: 3}
+  - {fileID: 21300000, guid: 36f55ba605204ae40babfa63a3168d4b, type: 3}
+  - {fileID: 21300000, guid: 3fe77324e1b1d644d9cde5146e1c27c8, type: 3}
+  - {fileID: 21300000, guid: 3b2ba5481cf565040932e274e200537e, type: 3}
+  - {fileID: 21300000, guid: 5843165dc68276d4eb6482067b8f116f, type: 3}
+  - {fileID: 21300000, guid: 08b4e3e87b1a44243b5b183f824331ef, type: 3}
+  - {fileID: 21300000, guid: ce135697c7f9dd34a9d698023dc6fd18, type: 3}
+  - {fileID: 21300000, guid: 3e18d75e2375e7f43bfd2043bfbc96cf, type: 3}
+  shriek:
+  - {fileID: 21300000, guid: b25bfd897afec5b44ab8a5fcf67dfef3, type: 3}
+  - {fileID: 21300000, guid: 86bc5e4c7ea040843a415c525d767fa3, type: 3}
+  - {fileID: 21300000, guid: b990f0ad88f0757448f11f7494c6a6ad, type: 3}
+  - {fileID: 21300000, guid: ebccd2202b011ac4698be49f60f01095, type: 3}
+  - {fileID: 21300000, guid: fabb71e2320921244b57948d9cf8cc8b, type: 3}
+  - {fileID: 21300000, guid: 55493533c69c1d64b9282c3aa1470af9, type: 3}
+  - {fileID: 21300000, guid: 2565864a6098287409c639779b8201a4, type: 3}
+  - {fileID: 21300000, guid: 04c30dfc2b06b934f8ab5fb6920863b5, type: 3}
+  - {fileID: 21300000, guid: 37d334d9d6036fa4393bbc5d52331c11, type: 3}
+  - {fileID: 21300000, guid: ab2467c7cf429174ca6b6e110c98d89a, type: 3}
+  - {fileID: 21300000, guid: 314a6b2331b63bb47881c1912fd15bb1, type: 3}
+  - {fileID: 21300000, guid: f07750a8032434549a788cdac4f56fa2, type: 3}
+  - {fileID: 21300000, guid: 47faac9378d48f24f84feb97efe65e9b, type: 3}
+  shriekBase:
+  - {fileID: 21300000, guid: a6d97a682ccff5c459af8402aec126dd, type: 3}
+  - {fileID: 21300000, guid: 08915a91f87c7f346a63347bfedf928f, type: 3}
+  - {fileID: 21300000, guid: 86f7f575f58173347b0f1fdbc40afc43, type: 3}
+  - {fileID: 21300000, guid: a9c7340c526975e42bb0f315b6975c66, type: 3}
+  - {fileID: 21300000, guid: 95b8355c2ba63244dbdf984f43db2f4e, type: 3}
+  - {fileID: 21300000, guid: 534ea58695e5b2549ade37ea642ec5e4, type: 3}
+  - {fileID: 21300000, guid: 03464cc37df2b954aad02ebbaaa0e9a4, type: 3}
+  - {fileID: 21300000, guid: 6f6a0b9c40e14744982f61ac05272486, type: 3}
+  - {fileID: 21300000, guid: 44bf8757fc6a55944817731c897369f1, type: 3}
+  - {fileID: 21300000, guid: f0a379b174d7b5e499ef6f9ea0d9b7cc, type: 3}
+  soulGlow: {fileID: 21300000, guid: 2274109fcf0b28a43943a91e31cce9c0, type: 3}
+  focusSound: {fileID: 8300000, guid: 5749d0c0614e9824d9b6bee26944c9fc, type: 3}
+  healSound: {fileID: 8300000, guid: 8172388159c15184b8740106484a3454, type: 3}
+  castSound: {fileID: 8300000, guid: 510c1c8458ae8e84aa26879bc3255633, type: 3}
+  shriekSound: {fileID: 8300000, guid: 79101d4a654c2894f935a261fffc3eb7, type: 3}
+  diveSound: {fileID: 8300000, guid: 1c79dedef33e8484d8f7866a80a7a478, type: 3}
+  impactSound: {fileID: 8300000, guid: 064608baa138b3b409cbabc66d2cfcb3, type: 3}

@@ -1,0 +1,6 @@
+PASS: soul capacity, insufficient-soul rejection, nail soul gain, cast lock, projectile piercing and collider deduplication.
+PASS: focus heals, updates health events, drains soul, and cancels on release/damage without refunds.
+PASS: Abyss Shriek four pulses, upper damage area, one soul charge, and gravity restoration.
+PASS: grounded dive launches, falls and lands; two damage waves, temporary invulnerability, fragile-structure break and ordinary-ground preservation.
+PASS: real configured up/down/quick-cast inputs, tap/hold distinction, release cancellation and paused input.
+PASS: disabled-player cleanup; all four spell previews rendered.
