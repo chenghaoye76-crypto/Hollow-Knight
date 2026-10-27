@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5678838357972789120}
-  - component: {fileID: 6497330196777908111}
   m_Layer: 0
   m_Name: MantisLordController
   m_TagString: Untagged
@@ -36,33 +35,6 @@ Transform:
   - {fileID: 6051681404719364301}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6497330196777908111
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978537804855004990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0afb1558ac26cd4c8b60b287f090eeb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MantisLordsEncounter
-  assets: {fileID: 11400000, guid: 6863eab6dd1223046926f3c7bcad98a6, type: 2}
-  lords:
-  - {fileID: 5820842093988449787}
-  - {fileID: 2401299226292961325}
-  - {fileID: 8622341808460074756}
-  room: {fileID: 0}
-  challengePrompt: {fileID: 4289200653093158610}
-  title: {fileID: 0}
-  left: -12.2
-  right: 12.2
-  floor: -5.6
-  challengeHalfWidth: 3.2
-  onVictory:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1 &6124677231347924064
 GameObject:
   m_ObjectHideFlags: 0
@@ -194,22 +166,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: sister2
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4086952548694731212, guid: 781e4227db4ae9645b43d041d4265835, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 781e4227db4ae9645b43d041d4265835, type: 3}
---- !u!114 &2401299226292961325 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4086952548694731212, guid: 781e4227db4ae9645b43d041d4265835, type: 3}
-  m_PrefabInstance: {fileID: 1865868329077402081}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b042fbac860fb2b4587dc775565b1670, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MantisLord
 --- !u!4 &5310859747006036976 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5789117360715092497, guid: 781e4227db4ae9645b43d041d4265835, type: 3}
@@ -267,7 +229,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 8841406662938396055, guid: fd15ba29a98b7c14ea7dc6f97495f070, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -277,17 +240,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3282180667423312811, guid: fd15ba29a98b7c14ea7dc6f97495f070, type: 3}
   m_PrefabInstance: {fileID: 3059410412226578540}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5820842093988449787 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8841406662938396055, guid: fd15ba29a98b7c14ea7dc6f97495f070, type: 3}
-  m_PrefabInstance: {fileID: 3059410412226578540}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b042fbac860fb2b4587dc775565b1670, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MantisLord
 --- !u!1001 &3688295700622509427
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -356,22 +308,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 624091738420100001, guid: 13e2f7e5dcd88ca4aa48c956189e5aa9, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 13e2f7e5dcd88ca4aa48c956189e5aa9, type: 3}
---- !u!114 &4289200653093158610 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 624091738420100001, guid: 13e2f7e5dcd88ca4aa48c956189e5aa9, type: 3}
-  m_PrefabInstance: {fileID: 3688295700622509427}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7a1d6a93c764308b2df840be624091f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &6326662332640066877 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7269835346050709582, guid: 13e2f7e5dcd88ca4aa48c956189e5aa9, type: 3}
@@ -429,7 +371,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: sister3
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3975279759093249194, guid: 908bddf7a189be24b8fac08cad3f4004, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -439,14 +382,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1314230399675852209, guid: 908bddf7a189be24b8fac08cad3f4004, type: 3}
   m_PrefabInstance: {fileID: 4648754747603336110}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8622341808460074756 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3975279759093249194, guid: 908bddf7a189be24b8fac08cad3f4004, type: 3}
-  m_PrefabInstance: {fileID: 4648754747603336110}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b042fbac860fb2b4587dc775565b1670, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MantisLord
