@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,11 +8,17 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private PlayerInput playerInput;
     private PlayerAction playerAction;
-    private Vector2 moveInput;
     private bool facingRight = true;
+    private Vector2 moveInput;
+    [Header("Movemnet details")]
     [SerializeField] private float moveSpeed = 8.3f;
     [SerializeField] private float jumpForce = 8f;
-    
+
+    [Header("Collision details")]
+    [SerializeField] private float groundCheckDistace;
+    [SerializeField] private bool isGrounded;
+    private LayerMask whatIsGround;
+
     private void Awake()
     {
         anim = GetComponent<Animator>();
@@ -22,7 +29,7 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         HandleAnimations();
-
+        HandleCollison();
         HandleFlip();
     }
 
@@ -62,8 +69,13 @@ public class PlayerController : MonoBehaviour
 
     public void Jump(InputAction.CallbackContext context)
     {
-        if (context.performed)
+        if (context.performed && isGrounded) 
             rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
+    }
+
+    private void HandleCollison()
+    {
+        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistace, whatIsGround);
     }
 
     private void HandleFlip()
@@ -80,5 +92,10 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(0, 180, 0);
         facingRight = !facingRight;
         anim.SetTrigger("isTurning");
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, -groundCheckDistace));
     }
 }
