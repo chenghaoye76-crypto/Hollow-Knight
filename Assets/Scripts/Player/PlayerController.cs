@@ -13,18 +13,23 @@ public class PlayerController : MonoBehaviour
     [Header("Movemnet details")]
     [SerializeField] private float moveSpeed = 8.3f;
     [SerializeField] private float jumpForce = 15.7f;
-    private bool jumpHold;
+    private bool isJumpHold;
     private bool isJumpCancle;
     private bool isJumpRise;
+    private float MaxVelocityY = 20.9f;
+    [SerializeField] private bool isHardLand;
 
     [Header("Collision details")]
     [SerializeField] private float groundCheckDistace;
-    [SerializeField] private bool isGrounded;
+    [SerializeField] private bool isGround;
     [SerializeField] private LayerMask whatIsGround;
 
     [Header("Timer")]
     [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
     [SerializeField] private float lowJumpTime = 0.08f;//最短跳跃时间
+    private float dropTime = 1.1f;
+    private float dropTimer;
+
     private bool jumpReleased;
 
     private void Awake()
@@ -36,20 +41,19 @@ public class PlayerController : MonoBehaviour
     }
     private void Update()
     {
-        isJumpRise = rb.linearVelocityY > 0f;
         HandleAnimations();
         HandleCollison();
+        CheckHardLand();
         HandleFlip();
         JumpUpdate();
     }
 
-
-    private void HandleAnimations()
+    private void FixedUpdate()
     {
-        bool isMoving = rb.linearVelocity.x != 0;
-        anim.SetBool("isMoving", isMoving);
-        anim.SetFloat("yVelocity", rb.linearVelocityY);
+        MoveFixedUpdate();
+        LimitVelocityY();
     }
+
 
     private void OnEnable()
     {
@@ -63,14 +67,10 @@ public class PlayerController : MonoBehaviour
         playerAction.Player.Jump.performed -= Jump;
         playerAction.Player.Move.performed -= Move;
         playerAction.Player.Move.canceled -= Move;
+        playerAction.Player.Move.canceled -= Move;
     }
 
 
-    private void FixedUpdate()
-    {
-        if (moveInput != null)
-            rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
-    }
 
     #region MOVE
     public void Move(InputAction.CallbackContext context)
@@ -78,7 +78,11 @@ public class PlayerController : MonoBehaviour
         moveInput = context.ReadValue<Vector2>();
     }
 
-
+    private void MoveFixedUpdate()
+    {
+        if (moveInput != null)
+            rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+    }
 
 
 
@@ -88,13 +92,13 @@ public class PlayerController : MonoBehaviour
     #region JUMP
     public void Jump(InputAction.CallbackContext context)
     {
-        if (context.performed && isGrounded)
+        if (context.performed && isGround)
         {
             StartCoroutine(HighJumpTime());
             StartCoroutine(LowJumpTime());
             anim.SetTrigger("Jump");
             jumpReleased = false;
-            jumpHold = true;
+            isJumpHold = true;
         }
         if (context.canceled) 
         {
@@ -103,7 +107,7 @@ public class PlayerController : MonoBehaviour
             if (isJumpCancle && isJumpRise)  
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
-                jumpHold = false;
+                isJumpHold = false;
                 jumpReleased = false;
             }
         }
@@ -111,13 +115,14 @@ public class PlayerController : MonoBehaviour
 
     private void JumpUpdate()
     {
-        if (jumpHold)
+        isJumpRise = rb.linearVelocityY > 0f;
+        if (isJumpHold)
             rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
 
         if (isJumpCancle && jumpReleased && isJumpRise)  
         {
             rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
-            jumpHold = false;
+            isJumpHold = false;
             jumpReleased = false;
         }
     }
@@ -132,7 +137,7 @@ public class PlayerController : MonoBehaviour
     IEnumerator HighJumpTime()
     {
         yield return new WaitForSeconds(highJumpTime);
-        jumpHold = false;
+        isJumpHold = false;
     }
 
 
@@ -142,11 +147,63 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
-    private void HandleCollison()
+
+    #region CHECK
+    private void HandleAnimations()
     {
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistace, whatIsGround);
+        bool isMoving = rb.linearVelocity.x != 0;
+        anim.SetFloat("VelocityY", rb.linearVelocityY);
+        anim.SetFloat("inputX", Math.Abs(moveInput.x));
+        anim.SetBool("isGround", isGround);
+        anim.SetBool("isMoving", isMoving);
+        anim.SetBool("isHardLand", isHardLand);
     }
 
+    private void HandleCollison()
+    {
+        isGround = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistace, whatIsGround);
+    }
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, -groundCheckDistace));
+    }
+    private void CheckHardLand()
+    {
+        if (!isGround && rb.linearVelocityY < 0)
+        {
+            dropTimer += Time.deltaTime;
+        }
+        else if(isGround)
+        {
+            dropTimer = 0f;
+        }
+        if (dropTimer > dropTime)
+        {
+            isHardLand = true;
+        }
+    }
+    //通过动画事件来取消硬着陆
+    private void AnimHardLand()
+    {
+        isHardLand = false;
+        Debug.Log(isHardLand);
+        dropTimer = 0f;
+    }
+    private void LimitVelocityY()
+    {
+        rb.linearVelocityY = Mathf.Clamp(rb.linearVelocityY, -MaxVelocityY, MaxVelocityY);
+    }
+
+
+
+
+
+
+
+
+    #endregion
+
+    #region TURN
     private void HandleFlip()
     {
         if (moveInput.x > 0.1f && facingRight == false)
@@ -162,8 +219,14 @@ public class PlayerController : MonoBehaviour
         anim.SetTrigger("isTurning");
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, -groundCheckDistace));
-    }
+
+
+
+
+
+
+
+    #endregion
+
+
 }
