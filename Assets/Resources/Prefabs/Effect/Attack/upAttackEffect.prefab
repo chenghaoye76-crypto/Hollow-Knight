@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 179513466976506058}
   - component: {fileID: 294523966666748704}
-  - component: {fileID: 8966099813146248908}
   - component: {fileID: 2706077844466271558}
   - component: {fileID: 3569350135261391988}
-  m_Layer: 8
+  - component: {fileID: -4556157620640513518}
+  m_Layer: 9
   m_Name: upAttackEffect
-  m_TagString: Untagged
+  m_TagString: attack
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -57,18 +57,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &8966099813146248908
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8332303805945545675}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56f11def76387bc4ea4e78e650c2a411, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
 --- !u!212 &2706077844466271558
 SpriteRenderer:
   serializedVersion: 3
@@ -116,7 +104,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -410005701
   m_SortingLayer: 2
-  m_SortingOrder: 1
+  m_SortingOrder: -1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: cd7aebd3f57ba304997623d3c5492dfc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -191,4 +179,16 @@ PolygonCollider2D:
       - {x: -1.2088535, y: 2.8161838}
       - {x: -1.4179995, y: 2.4733112}
       - {x: -1.5552164, y: 0.91484326}
-  m_UseDelaunayMesh: 1
+  m_UseDelaunayMesh: 0
+--- !u!114 &-4556157620640513518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8332303805945545675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb26a4d05c477af48be2a79b414366fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Poolbb

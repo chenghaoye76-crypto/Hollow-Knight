@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - attack
   layers:
   - Default
   - TransparentFX
@@ -12,11 +13,11 @@ TagManager:
   - Water
   - UI
   - Ground
+  - 
+  - 
+  - Object
+  - 
   - Enemy
-  - Attack
-  - 
-  - 
-  - 
   - 
   - 
   - 

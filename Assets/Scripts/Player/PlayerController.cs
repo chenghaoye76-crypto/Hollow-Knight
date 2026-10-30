@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
 {   private Animator anim;
     private Rigidbody2D rb;
     private PlayerAction playerAction;
+    private PlayerEffectManager effectManager;
     private bool facingRight;
     private Vector2 moveInput;
     [Header("Movemnet details")]
@@ -18,6 +19,11 @@ public class PlayerController : MonoBehaviour
     private bool isJumpRise;
     private float MaxVelocityY = 20.9f;
     [SerializeField] private bool isHardLand;
+
+    [Header("Attack details")]
+    private int cycloneSlashCounter;
+
+
 
     [Header("Collision details")]
     [SerializeField] private float groundCheckDistace;
@@ -36,6 +42,7 @@ public class PlayerController : MonoBehaviour
     {
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
+        effectManager = GetComponentInChildren<PlayerEffectManager>();
         playerAction = new PlayerAction();
         playerAction.Player.Enable();
     }
@@ -61,6 +68,7 @@ public class PlayerController : MonoBehaviour
         playerAction.Player.Jump.canceled += Jump;
         playerAction.Player.Move.performed += Move;
         playerAction.Player.Move.canceled += Move;
+        playerAction.Player.Attack.started += Attack;
     }
     private void OnDisable()
     {
@@ -68,10 +76,41 @@ public class PlayerController : MonoBehaviour
         playerAction.Player.Move.performed -= Move;
         playerAction.Player.Move.canceled -= Move;
         playerAction.Player.Move.canceled -= Move;
+        playerAction.Player.Attack.started -= Attack;
+    }
+
+
+    #region InputEvent
+    public void Attack(InputAction.CallbackContext context)
+    {
+        ToAttack();
     }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #endregion
+
+
+
+
+
+
+
+
+    #region MOTION
     #region MOVE
     public void Move(InputAction.CallbackContext context)
     {
@@ -148,6 +187,143 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
+    #region Attack
+    private void ToAttack()
+    {
+        StopCoroutine(attackPressJudge());
+        StartCoroutine(attackPressJudge());
+    }
+
+    private IEnumerator attackPressJudge()
+    {
+        yield return new WaitForFixedUpdate();
+
+        if (moveInput.y> 0.2f)
+        {
+            //preAttackisNormal = false;
+            anim.SetTrigger("upAttack");
+        }
+        else if (moveInput.y< -0.2f && !isGround)
+        {
+            //preAttackisNormal = false;
+            anim.SetTrigger("downAttack");
+        }
+        else
+        {
+            //preAttackisNormal = true;
+            anim.SetTrigger("firstAttack");
+        }
+
+
+    }
+
+
+    public void AttackOver()
+    {
+        Debug.Log("AttackOver");
+    }
+
+
+
+
+
+
+
+
+
+    #endregion
+
+
+    #region TURN
+    private void HandleFlip()
+    {
+        if (moveInput.x > 0.1f && facingRight == false)
+        {
+            transform.localScale = new Vector3(-Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            Flip();
+        }
+        else if (moveInput.x < -0.1f && facingRight == true)
+        {
+            transform.localScale = new Vector3(Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            Flip();
+        }
+    }
+    
+    private void Flip()
+    {
+        facingRight = !facingRight;
+        if (isGround)
+            anim.SetTrigger("isTurning");
+    }
+
+
+
+
+
+
+
+
+    #endregion
+
+    #endregion
+
+    #region AttackEffect
+
+    public void Attack1()
+    {
+        effectManager.FisrtAttack();
+    }
+
+    public void Attack2()
+    {
+        effectManager.SecondAttack();
+    }
+
+    public void UpAttack()
+    {
+        effectManager.UpAttack();
+
+
+    }
+
+    public void DownAttack()
+    {
+        effectManager.DownAttack();
+    }
+
+    public void BigAttack()
+    {
+        effectManager.BigAttack();
+    }
+
+
+
+    public void CycloneAttackOneRound()
+    {
+        cycloneSlashCounter--;
+    }
+
+
+
+    public void CycloneAttack()
+    {
+        effectManager.CycloneEffect();
+    }
+
+
+    public void DashAttack()
+    {
+        effectManager.DashAttack();
+    }
+
+
+
+
+
+
+
+    #endregion
+
     #region CHECK
     private void HandleAnimations()
     {
@@ -203,30 +379,6 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-    #region TURN
-    private void HandleFlip()
-    {
-        if (moveInput.x > 0.1f && facingRight == false)
-            Flip();
-        else if (moveInput.x < -0.1f && facingRight == true)
-            Flip();
-    }
-    
-    private void Flip()
-    {
-        transform.Rotate(0, 180, 0);
-        facingRight = !facingRight;
-        anim.SetTrigger("isTurning");
-    }
-
-
-
-
-
-
-
-
-    #endregion
 
 
 }

@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 3198714490044272844}
   - component: {fileID: 1882202230223047797}
-  - component: {fileID: 1843909992152281094}
   - component: {fileID: 4278453526556012239}
   - component: {fileID: 8760958223553024560}
-  m_Layer: 8
+  - component: {fileID: -658045042157032370}
+  m_Layer: 9
   m_Name: dashAttackEffect
-  m_TagString: Untagged
+  m_TagString: attack
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -57,18 +57,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1843909992152281094
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5939811735413077780}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e897909b1d6309846b5658533f484b18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AttackHit
 --- !u!212 &4278453526556012239
 SpriteRenderer:
   serializedVersion: 3
@@ -116,7 +104,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -410005701
   m_SortingLayer: 2
-  m_SortingOrder: 1
+  m_SortingOrder: -1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: bf63c3ec1f109894cbb513ddda5a8b7d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -180,4 +168,16 @@ PolygonCollider2D:
       - {x: -5.660058, y: 0.27443933}
       - {x: -4.1616845, y: -0.61521626}
       - {x: 5.2724986, y: -0.99259484}
-  m_UseDelaunayMesh: 1
+  m_UseDelaunayMesh: 0
+--- !u!114 &-658045042157032370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5939811735413077780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb26a4d05c477af48be2a79b414366fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Poolbb
