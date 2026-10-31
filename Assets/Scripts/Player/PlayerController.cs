@@ -1,12 +1,34 @@
 using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
-{   private Animator anim;
-    private Rigidbody2D rb;
+{
+
+
+    private StateMechine<PlayerController> _stateMachine;
+    public StateMechine<PlayerController> stateMechine
+    {
+        get
+        {
+            if (_stateMachine == null)
+            {
+                _stateMachine = new StateMechine<PlayerController>();
+                _stateMachine.AddState(StateType.idel, new PlayerIdelState(this));
+            }
+            return _stateMachine;
+        }
+    }
+    [HideInInspector] public Animator anim;
+    [HideInInspector] public Rigidbody2D rb;
+
+
+
+
     private PlayerAction playerAction;
     private PlayerEffectManager effectManager;
     private bool facingRight;
@@ -22,17 +44,24 @@ public class PlayerController : MonoBehaviour
 
     [Header("Attack details")]
     private int cycloneSlashCounter;
+    public float bigSlashFallSpeed = 0.9f;
 
+
+    [Header("Check state")]
+    [HideInInspector] public float preInputTime = 0.2f;
+    [HideInInspector] public bool attackPress;
+    public bool isAttacking;
+    public bool isGround;
 
 
     [Header("Collision details")]
     [SerializeField] private float groundCheckDistace;
-    [SerializeField] private bool isGround;
     [SerializeField] private LayerMask whatIsGround;
 
     [Header("Timer")]
     [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
     [SerializeField] private float lowJumpTime = 0.08f;//最短跳跃时间
+    [HideInInspector] public float gravityscale = 4.84f;
     private float dropTime = 1.1f;
     private float dropTimer;
 
@@ -45,6 +74,7 @@ public class PlayerController : MonoBehaviour
         effectManager = GetComponentInChildren<PlayerEffectManager>();
         playerAction = new PlayerAction();
         playerAction.Player.Enable();
+        AddBigNail();
     }
     private void Update()
     {
@@ -53,6 +83,7 @@ public class PlayerController : MonoBehaviour
         CheckHardLand();
         HandleFlip();
         JumpUpdate();
+        stateMechine.Update();
     }
 
     private void FixedUpdate()
@@ -68,7 +99,10 @@ public class PlayerController : MonoBehaviour
         playerAction.Player.Jump.canceled += Jump;
         playerAction.Player.Move.performed += Move;
         playerAction.Player.Move.canceled += Move;
-        playerAction.Player.Attack.started += Attack;
+        playerAction.Player.Attack.started += AttackStart;
+        playerAction.Player.Attack.canceled += AttackCancle;
+
+        gravityscale = rb.gravityScale;
     }
     private void OnDisable()
     {
@@ -76,17 +110,32 @@ public class PlayerController : MonoBehaviour
         playerAction.Player.Move.performed -= Move;
         playerAction.Player.Move.canceled -= Move;
         playerAction.Player.Move.canceled -= Move;
-        playerAction.Player.Attack.started -= Attack;
+        playerAction.Player.Attack.started -= AttackStart;
+        playerAction.Player.Attack.canceled -= AttackCancle;
     }
-
 
     #region InputEvent
-    public void Attack(InputAction.CallbackContext context)
+    public void AttackStart(InputAction.CallbackContext context)
     {
+        attackPress = true;
         ToAttack();
     }
+    public void AttackCancle(InputAction.CallbackContext context)
+    {
+        attackPress = false;
+    }
 
-
+    public void Jump(InputAction.CallbackContext context)
+    {
+        if (context.performed && isGround)
+        {
+            JumpStart();
+        }
+        if (context.canceled)
+        {
+            JumpCancle();
+        }
+    }
 
 
 
@@ -103,14 +152,7 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-
-
-
-
-
-
-
-    #region MOTION
+    #region Motion
     #region MOVE
     public void Move(InputAction.CallbackContext context)
     {
@@ -129,29 +171,26 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region JUMP
-    public void Jump(InputAction.CallbackContext context)
-    {
-        if (context.performed && isGround)
-        {
-            StartCoroutine(HighJumpTime());
-            StartCoroutine(LowJumpTime());
-            anim.SetTrigger("Jump");
-            jumpReleased = false;
-            isJumpHold = true;
-        }
-        if (context.canceled) 
-        {
-            jumpReleased = true;
 
-            if (isJumpCancle && isJumpRise)  
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
-                isJumpHold = false;
-                jumpReleased = false;
-            }
+    private void JumpStart()
+    {
+        StartCoroutine(HighJumpTime());
+        StartCoroutine(LowJumpTime());
+        anim.SetTrigger("Jump");
+        jumpReleased = false;
+        isJumpHold = true;
+    }
+    private void JumpCancle()
+    {
+        jumpReleased = true;
+
+        if (isJumpCancle && isJumpRise)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
+            isJumpHold = false;
+            jumpReleased = false;
         }
     }
-
     private void JumpUpdate()
     {
         isJumpRise = rb.linearVelocityY > 0f;
@@ -197,30 +236,57 @@ public class PlayerController : MonoBehaviour
     private IEnumerator attackPressJudge()
     {
         yield return new WaitForFixedUpdate();
-
-        if (moveInput.y> 0.2f)
+        float t = preInputTime;
+        bool isLong = true;
+        while (t > 0)
         {
-            //preAttackisNormal = false;
-            anim.SetTrigger("upAttack");
+            if (isAttacking)
+            {
+                t -= Time.fixedDeltaTime;
+                yield return null;
+            }
+            else
+                break;
         }
-        else if (moveInput.y< -0.2f && !isGround)
+        if (moveInput.y > 0.2f)
+            {
+                //preAttackisNormal = false;
+                anim.SetTrigger("upAttack");
+            }
+            else if (moveInput.y < -0.2f && !isGround)
+            {
+                //preAttackisNormal = false;
+                anim.SetTrigger("downAttack");
+            }
+            else
+            {
+                //preAttackisNormal = true;
+                anim.SetTrigger("firstAttack");
+            }
+        while (t > 0)
         {
-            //preAttackisNormal = false;
-            anim.SetTrigger("downAttack");
+            yield return null;
+            t -= Time.deltaTime;
+            if (!attackPress)
+            {
+                isLong = false;
+                break;
+            }
         }
-        else
+        
+            
+        if (isLong) 
         {
-            //preAttackisNormal = true;
-            anim.SetTrigger("firstAttack");
+            isAttacking = true;
+            stateMechine.ChangeState(StateType.bigSlash);
         }
-
-
     }
 
 
     public void AttackOver()
     {
-        Debug.Log("AttackOver");
+        isAttacking = false;
+        Debug.Log(isAttacking);
     }
 
 
@@ -232,7 +298,6 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
-
 
     #region TURN
     private void HandleFlip()
@@ -378,6 +443,33 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
+    #region AddSkll
+    public void SkillInit()
+    {
+        AddBigNail();
+    }
+    public void AddBigNail()
+    {
+        stateMechine.AddState(StateType.bigSlash, new PlayerNABigSlashState(this));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    #endregion
+    public void SetGravityScale(float gravityValue)
+    {
+        rb.gravityScale = gravityValue;
+    }
+
 
 
 

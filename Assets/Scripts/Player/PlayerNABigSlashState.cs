@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-    public class PlayerNABigSlashState : BaseState<PlayerController>
+public class PlayerNABigSlashState : BaseState<PlayerController>
 {
 
     public PlayerNABigSlashState(PlayerController owner)
@@ -12,18 +12,23 @@ using UnityEngine;
 
     public override void OnEnter()
     {
-        throw new System.NotImplementedException();
+        owner.SetGravityScale(0f);
+        owner.rb.linearVelocity = new Vector2(0, -owner.bigSlashFallSpeed);
+        owner.anim.SetTrigger("bigAttack");
     }
 
     public override void OnExit()
     {
-        throw new System.NotImplementedException();
+        owner.SetGravityScale(owner.gravityscale);
+
+        Debug.Log(owner.gravityscale);
     }
 
     public override void OnUpdate()
     {
-        throw new System.NotImplementedException();
+        if (!owner.isAttacking)
+            owner.stateMechine.ChangeState(StateType.idel);
     }
 
-    
-    }
+
+}
