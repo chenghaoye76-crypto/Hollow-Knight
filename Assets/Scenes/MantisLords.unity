@@ -334,6 +334,10 @@ PrefabInstance:
       value: 0.08
       objectReference: {fileID: 0}
     - target: {fileID: 3404267793505737276, guid: 38f0d02d77547a24e995d5e92abf831b, type: 3}
+      propertyPath: NAchargeTime
+      value: 1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3404267793505737276, guid: 38f0d02d77547a24e995d5e92abf831b, type: 3}
       propertyPath: highJumpTime
       value: 0.2
       objectReference: {fileID: 0}
@@ -345,6 +349,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 7779681150928595849, guid: 38f0d02d77547a24e995d5e92abf831b, type: 3}
+      propertyPath: NAcharge
+      value: 
+      objectReference: {fileID: 3132259208458525632, guid: ce0dfa934e3b9aa43b12401f691b90aa, type: 3}
+    - target: {fileID: 7779681150928595849, guid: 38f0d02d77547a24e995d5e92abf831b, type: 3}
+      propertyPath: NAcharged
+      value: 
+      objectReference: {fileID: 8046558469378640848, guid: b7f882f89fdaa484998952e99127021a, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -620,6 +632,50 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4405592918142289162, guid: be08b22a4e75ead47b84ab89bc46b9d6, type: 3}
   m_PrefabInstance: {fileID: 846800705}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &193423036
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 193423038}
+  - component: {fileID: 193423037}
+  m_Layer: 0
+  m_Name: EventManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &193423037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193423036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 976a3eb58f4933f4d8dddd571deda090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EventManager
+--- !u!4 &193423038
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193423036}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.59832, y: 3.4864, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &211343294
 GameObject:
   m_ObjectHideFlags: 0
@@ -4611,3 +4667,4 @@ SceneRoots:
   - {fileID: 1700620039}
   - {fileID: 382618095}
   - {fileID: 1258757373}
+  - {fileID: 193423038}

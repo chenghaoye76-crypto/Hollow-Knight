@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.TextCore.Text;
 
 public class PlayerController : MonoBehaviour
 {
@@ -31,37 +32,57 @@ public class PlayerController : MonoBehaviour
 
     private PlayerAction playerAction;
     private PlayerEffectManager effectManager;
-    private bool facingRight;
-    private Vector2 moveInput;
     [Header("Movemnet details")]
     [SerializeField] private float moveSpeed = 8.3f;
     [SerializeField] private float jumpForce = 15.7f;
+    [SerializeField] private bool isHardLand;
+    [HideInInspector] public Vector2 moveInput;
     private bool isJumpHold;
     private bool isJumpCancle;
     private bool isJumpRise;
     private float MaxVelocityY = 20.9f;
-    [SerializeField] private bool isHardLand;
 
     [Header("Attack details")]
-    private int cycloneSlashCounter;
+    public float NAchargeTime;
     public float bigSlashFallSpeed = 0.9f;
+    public float cycloneSlashFallSpeed = 4.9f;
+    public float cycloneSlashMoveSpeed;
+
+    [Header("Dash details")]
+    public float dashSpeed = 20f;//冲刺速度
+    public float dashTime = 0.15f;//冲刺时间
+    public float dashCD;
+    public float shadowDashCD;
+    public float superDashSpeed;
 
 
-    [Header("Check state")]
-    [HideInInspector] public float preInputTime = 0.2f;
-    [HideInInspector] public bool attackPress;
-    public bool isAttacking;
-    public bool isGround;
+
+
 
 
     [Header("Collision details")]
     [SerializeField] private float groundCheckDistace;
     [SerializeField] private LayerMask whatIsGround;
 
+    [Header("Check state")]
+    [HideInInspector] public float preInputTime = 0.2f;
+    [HideInInspector] public bool attackPress;
+    [HideInInspector] public bool facingRight;
+    [HideInInspector] public bool dashAttack = false;
+    public bool canControl = true;
+    public bool isAttacking;
+    public bool isGround;
+    public bool isDashing;
+
+
+
     [Header("Timer")]
     [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
     [SerializeField] private float lowJumpTime = 0.08f;//最短跳跃时间
     [HideInInspector] public float gravityscale = 4.84f;
+    [HideInInspector] public int cycloneSlashCounter;
+    [HideInInspector] public float dashTimer;//冲刺持续时间
+    [HideInInspector] public float dashCDTimer;
     private float dropTime = 1.1f;
     private float dropTimer;
 
@@ -74,7 +95,7 @@ public class PlayerController : MonoBehaviour
         effectManager = GetComponentInChildren<PlayerEffectManager>();
         playerAction = new PlayerAction();
         playerAction.Player.Enable();
-        AddBigNail();
+        SkillInit();
     }
     private void Update()
     {
@@ -95,10 +116,11 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        playerAction.Player.Jump.performed += Jump;
-        playerAction.Player.Jump.canceled += Jump;
         playerAction.Player.Move.performed += Move;
         playerAction.Player.Move.canceled += Move;
+        playerAction.Player.Jump.performed += Jump;
+        playerAction.Player.Jump.canceled += Jump;
+        playerAction.Player.Dash.performed += Dash;
         playerAction.Player.Attack.started += AttackStart;
         playerAction.Player.Attack.canceled += AttackCancle;
 
@@ -106,10 +128,11 @@ public class PlayerController : MonoBehaviour
     }
     private void OnDisable()
     {
-        playerAction.Player.Jump.performed -= Jump;
         playerAction.Player.Move.performed -= Move;
         playerAction.Player.Move.canceled -= Move;
-        playerAction.Player.Move.canceled -= Move;
+        playerAction.Player.Jump.performed -= Jump;
+        playerAction.Player.Jump.canceled -= Jump;
+        playerAction.Player.Dash.performed -= Dash;
         playerAction.Player.Attack.started -= AttackStart;
         playerAction.Player.Attack.canceled -= AttackCancle;
     }
@@ -124,7 +147,6 @@ public class PlayerController : MonoBehaviour
     {
         attackPress = false;
     }
-
     public void Jump(InputAction.CallbackContext context)
     {
         if (context.performed && isGround)
@@ -141,15 +163,6 @@ public class PlayerController : MonoBehaviour
 
 
 
-
-
-
-
-
-
-
-
-
     #endregion
 
     #region Motion
@@ -161,6 +174,8 @@ public class PlayerController : MonoBehaviour
 
     private void MoveFixedUpdate()
     {
+        //if(!canControl)
+        //    return;
         if (moveInput != null)
             rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
     }
@@ -225,6 +240,30 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
+    #region DASH
+
+    void Dash(InputAction.CallbackContext context)
+    {
+        StartCoroutine(dash());
+    }
+
+    IEnumerator dash()
+    {
+        float t = preInputTime;
+        yield return null;
+        isDashing = true;
+    }
+
+
+
+
+
+
+
+
+
+
+    #endregion
 
     #region Attack
     private void ToAttack()
@@ -249,20 +288,20 @@ public class PlayerController : MonoBehaviour
                 break;
         }
         if (moveInput.y > 0.2f)
-            {
-                //preAttackisNormal = false;
-                anim.SetTrigger("upAttack");
-            }
-            else if (moveInput.y < -0.2f && !isGround)
-            {
-                //preAttackisNormal = false;
-                anim.SetTrigger("downAttack");
-            }
-            else
-            {
-                //preAttackisNormal = true;
-                anim.SetTrigger("firstAttack");
-            }
+        {
+            //preAttackisNormal = false;
+            anim.SetTrigger("upAttack");
+        }
+        else if (moveInput.y < -0.2f && !isGround)
+        {
+            //preAttackisNormal = false;
+            anim.SetTrigger("downAttack");
+        }
+        else
+        {
+            //preAttackisNormal = true;
+            anim.SetTrigger("firstAttack");
+        }
         while (t > 0)
         {
             yield return null;
@@ -277,8 +316,38 @@ public class PlayerController : MonoBehaviour
             
         if (isLong) 
         {
-            isAttacking = true;
-            stateMechine.ChangeState(StateType.bigSlash);
+            effectManager.NACharge();
+            t = NAchargeTime;
+            while(attackPress && t > 0)
+            {
+                t -= Time.deltaTime;
+                yield return null;
+            }
+            EventManager.instance.VoidEventInvoke("NAChargeOver");
+            EventManager.instance.RemoveVoidEvent("NAChargeOver");
+            if (t > 0)
+                yield break;
+            if(attackPress)
+            {
+                effectManager.NACharged();
+                while (attackPress)
+                {
+                    yield return null;
+                }
+                EventManager.instance.VoidEventInvoke("NAChargedOver");
+                EventManager.instance.RemoveVoidEvent("NAChargeOver");
+                if (moveInput.y < 0.3f) 
+                {
+                    isAttacking = true;
+                    stateMechine.ChangeState(StateType.bigSlash);
+                }
+                else
+                {
+                    Debug.Log("cyclone");
+                    isAttacking = true;
+                    stateMechine.ChangeState(StateType.cycloneSlash);
+                }
+            }
         }
     }
 
@@ -286,7 +355,6 @@ public class PlayerController : MonoBehaviour
     public void AttackOver()
     {
         isAttacking = false;
-        Debug.Log(isAttacking);
     }
 
 
@@ -398,6 +466,7 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("isGround", isGround);
         anim.SetBool("isMoving", isMoving);
         anim.SetBool("isHardLand", isHardLand);
+        anim.SetBool("isDashing", isDashing);
     }
 
     private void HandleCollison()
@@ -443,16 +512,26 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
+
     #region AddSkll
     public void SkillInit()
     {
+        AddNormalDash();
         AddBigNail();
+        AddCycloneNail();
+    }
+    public void AddNormalDash()
+    {
+        stateMechine.AddState(StateType.dash, new PlayerDashState(this));
     }
     public void AddBigNail()
     {
         stateMechine.AddState(StateType.bigSlash, new PlayerNABigSlashState(this));
     }
-
+    public void AddCycloneNail()
+    {
+        stateMechine.AddState(StateType.cycloneSlash, new PlayerNACycloneState(this));
+    }
 
 
 

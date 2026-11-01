@@ -20,8 +20,6 @@ public class PlayerNABigSlashState : BaseState<PlayerController>
     public override void OnExit()
     {
         owner.SetGravityScale(owner.gravityscale);
-
-        Debug.Log(owner.gravityscale);
     }
 
     public override void OnUpdate()

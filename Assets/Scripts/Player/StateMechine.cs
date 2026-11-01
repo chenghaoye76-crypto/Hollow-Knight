@@ -33,6 +33,7 @@ public class StateMechine<T>
     {
         if (m_MechineState.ContainsKey(stateID))
         {
+            UnityEngine.Debug.Log($"状态切换：{currentStateID} → {stateID}");
             currentState.OnExit();
             previousStateID = currentStateID;
             currentStateID = stateID;
