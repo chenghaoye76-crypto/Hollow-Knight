@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
@@ -26,7 +27,8 @@ public class PlayerController : MonoBehaviour
     }
     [HideInInspector] public Animator anim;
     [HideInInspector] public Rigidbody2D rb;
-
+    [HideInInspector] public BoxCollider2D coll;
+    [HideInInspector] public Collider2D quakeCollider;
 
 
 
@@ -47,6 +49,9 @@ public class PlayerController : MonoBehaviour
     public float bigSlashFallSpeed = 0.9f;
     public float cycloneSlashFallSpeed = 4.9f;
     public float cycloneSlashMoveSpeed;
+    public float dashSlashFallSpeed = 0.9f;
+    public float dashSlashSpeed = 15f;
+    public float dashSlashDeceleration = 187.5f;
 
     [Header("Dash details")]
     public float dashSpeed = 20f;//冲刺速度
@@ -69,12 +74,22 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public bool attackPress;
     [HideInInspector] public bool facingRight;
     [HideInInspector] public bool dashAttack = false;
+    [HideInInspector] public bool skillPress;
+    [HideInInspector] public bool fireBallPushStarted;
+    [HideInInspector] public bool isQuake;
     public bool canControl = true;
+    public bool canMove = true;
+    public bool canTurn = true;
     public bool isAttacking;
     public bool isGround;
     public bool isDashing;
+    public bool isUsingSkill; 
 
-
+    [Header("Skill details")]
+    public float foucusTime = 0.83f;
+    public float fireBallPushForce = 3f;
+    public float fireBallPushTime = 0.2f;
+    public float quakeSpeed = 30f;
 
     [Header("Timer")]
     [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
@@ -92,6 +107,8 @@ public class PlayerController : MonoBehaviour
     {
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
+        coll = GetComponent<BoxCollider2D>();
+        quakeCollider = transform.Find("quakeCollider").GetComponent<BoxCollider2D>();
         effectManager = GetComponentInChildren<PlayerEffectManager>();
         playerAction = new PlayerAction();
         playerAction.Player.Enable();
@@ -102,39 +119,35 @@ public class PlayerController : MonoBehaviour
         HandleAnimations();
         HandleCollison();
         CheckHardLand();
-        HandleFlip();
         JumpUpdate();
         stateMechine.Update();
     }
-
     private void FixedUpdate()
     {
         MoveFixedUpdate();
         LimitVelocityY();
     }
-
-
     private void OnEnable()
     {
-        playerAction.Player.Move.performed += Move;
-        playerAction.Player.Move.canceled += Move;
         playerAction.Player.Jump.performed += Jump;
         playerAction.Player.Jump.canceled += Jump;
         playerAction.Player.Dash.performed += Dash;
         playerAction.Player.Attack.started += AttackStart;
         playerAction.Player.Attack.canceled += AttackCancle;
+        playerAction.Player.Skill.started += SkillStart;
+        playerAction.Player.Skill.canceled += SkillCancled;
 
         gravityscale = rb.gravityScale;
     }
     private void OnDisable()
     {
-        playerAction.Player.Move.performed -= Move;
-        playerAction.Player.Move.canceled -= Move;
         playerAction.Player.Jump.performed -= Jump;
         playerAction.Player.Jump.canceled -= Jump;
         playerAction.Player.Dash.performed -= Dash;
         playerAction.Player.Attack.started -= AttackStart;
         playerAction.Player.Attack.canceled -= AttackCancle;
+        playerAction.Player.Skill.started -= SkillStart;
+        playerAction.Player.Skill.canceled -= SkillCancled;
     }
 
     #region InputEvent
@@ -158,7 +171,15 @@ public class PlayerController : MonoBehaviour
             JumpCancle();
         }
     }
-
+    public void SkillStart(InputAction.CallbackContext context)
+    {
+        skillPress = true;
+        ToSkill();
+    }
+    public void SkillCancled(InputAction.CallbackContext context)
+    {
+        skillPress = false;
+    }
 
 
 
@@ -166,18 +187,51 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region Motion
-    #region MOVE
-    public void Move(InputAction.CallbackContext context)
+
+    #region TURN
+    private void Turn()
     {
-        moveInput = context.ReadValue<Vector2>();
+        if (moveInput.x > 0.1f && facingRight == false)
+        {
+            transform.localScale = new Vector3(-Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            Flip();
+        }
+        else if (moveInput.x < -0.1f && facingRight == true)
+        {
+            transform.localScale = new Vector3(Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            Flip();
+        }
+    }
+    
+    private void Flip()
+    {
+        facingRight = !facingRight;
+        if (isGround)
+            anim.SetTrigger("isTurning");
     }
 
-    private void MoveFixedUpdate()
+
+
+
+
+
+
+
+    #endregion
+
+    #region MOVE
+    public void MoveFixedUpdate()
     {
-        //if(!canControl)
-        //    return;
+        moveInput = playerAction.Player.Move.ReadValue<Vector2>();
+    }
+
+    public void Move()
+    {
+        if (!canControl)
+            return;
         if (moveInput != null)
             rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+        Turn();
     }
 
 
@@ -240,6 +294,7 @@ public class PlayerController : MonoBehaviour
 
 
     #endregion
+
     #region DASH
 
     void Dash(InputAction.CallbackContext context)
@@ -336,7 +391,9 @@ public class PlayerController : MonoBehaviour
                 }
                 EventManager.instance.VoidEventInvoke("NAChargedOver");
                 EventManager.instance.RemoveVoidEvent("NAChargeOver");
-                if (moveInput.y < 0.3f) 
+                if (stateMechine.currentStateID == StateType.dash)
+                    dashAttack = true;
+                else if (moveInput.y < 0.3f) 
                 {
                     isAttacking = true;
                     stateMechine.ChangeState(StateType.bigSlash);
@@ -367,30 +424,68 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-    #region TURN
-    private void HandleFlip()
+    #region Skill
+    public void SkillOver()
     {
-        if (moveInput.x > 0.1f && facingRight == false)
+        isUsingSkill = false;
+        canControl = true;
+        canMove = true;
+    }
+    private void ToSkill()
+    {
+        //if (character.Attribute.CurrentSoul < 33)
+        //    return;
+        StartCoroutine(skillPressJudge());
+    }
+    IEnumerator skillPressJudge()
+    {
+        bool isLong = true;
+        float t = preInputTime;
+        //预输入判断
+        while (t > 0)
         {
-            transform.localScale = new Vector3(-Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
-            Flip();
+            if (!canControl /*|| isMap || isMinJumping*/)
+            {
+                t -= Time.deltaTime;
+                yield return null;
+            }
+            else
+                break;
         }
-        else if (moveInput.x < -0.1f && facingRight == true)
+        if (!canControl /*|| isMap || isMinJumping*/)
+            yield break;
+        if (moveInput.y < -0.2f)
         {
-            transform.localScale = new Vector3(Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
-            Flip();
+            isUsingSkill = true;
+            rb.linearVelocity = Vector2.zero;
+            if (isGround)
+            {
+
+            }
+            else
+            {
+                anim.SetTrigger("quake2");
+            }
+        }
+        if (moveInput.y > 0.2f)
+        {
+            isUsingSkill = true;
+            rb.linearVelocity = Vector2.zero;
+            anim.SetTrigger("scream2");
+            stateMechine.ChangeState(StateType.scream);
+            canMove = false;
+        }
+        else
+        {
+            isUsingSkill = true;
+            anim.SetTrigger("fireBall2");
+            stateMechine.ChangeState(StateType.fireBall);
         }
     }
-    
-    private void Flip()
+    public void StartFireBallPush()
     {
-        facingRight = !facingRight;
-        if (isGround)
-            anim.SetTrigger("isTurning");
+        fireBallPushStarted = true;
     }
-
-
-
 
 
 
@@ -406,47 +501,56 @@ public class PlayerController : MonoBehaviour
     {
         effectManager.FisrtAttack();
     }
-
     public void Attack2()
     {
         effectManager.SecondAttack();
     }
-
     public void UpAttack()
     {
         effectManager.UpAttack();
 
 
     }
-
     public void DownAttack()
     {
         effectManager.DownAttack();
     }
-
     public void BigAttack()
     {
         effectManager.BigAttack();
     }
-
-
-
     public void CycloneAttackOneRound()
     {
         cycloneSlashCounter--;
     }
-
-
-
     public void CycloneAttack()
     {
         effectManager.CycloneEffect();
     }
-
-
     public void DashAttack()
     {
+        canTurn = false;
         effectManager.DashAttack();
+    }
+
+
+
+
+
+
+
+    #endregion
+
+    #region SkillEffect
+    public void FireBall2()
+    {
+        effectManager.FireBall2();
+    }
+    public void Scream2()
+    {
+        effectManager.ScreamEffect2();
+        if (isGround)
+            effectManager.ScreamBase2();
     }
 
 
@@ -519,6 +623,10 @@ public class PlayerController : MonoBehaviour
         AddNormalDash();
         AddBigNail();
         AddCycloneNail();
+        AddDashNail();
+        AddShadeFireBall();
+        AddShadeScream();
+        AddShadeQuake();
     }
     public void AddNormalDash()
     {
@@ -532,8 +640,22 @@ public class PlayerController : MonoBehaviour
     {
         stateMechine.AddState(StateType.cycloneSlash, new PlayerNACycloneState(this));
     }
-
-
+    public void AddDashNail()
+    {
+        stateMechine.AddState(StateType.dashSlash, new PlayerNADashSlashState(this));
+    }
+    public void AddShadeFireBall()
+    {
+        stateMechine.AddState(StateType.fireBall, new PlayerFireBallState(this));
+    }
+    public void AddShadeScream()
+    {
+        stateMechine.AddState(StateType.scream, new PlayerScreamState(this));
+    }
+    public void AddShadeQuake()
+    {
+        stateMechine.AddState(StateType.quake, new PlayerQuakeState(this));
+    }
 
 
 

@@ -51,6 +51,11 @@ public class PlayerDashState : BaseState<PlayerController>
         owner.rb.linearVelocity = new Vector2(vector * owner.dashSpeed, 0f);
         if (owner.dashTimer < 0f)
         {
+            if (owner.dashAttack)
+            {
+                owner.isAttacking = true;
+                owner.stateMechine.ChangeState(StateType.dashSlash);
+            }
             owner.stateMechine.ChangeState(StateType.idel);
 
         }

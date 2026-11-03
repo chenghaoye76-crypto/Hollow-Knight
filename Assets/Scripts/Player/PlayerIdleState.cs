@@ -19,6 +19,7 @@ public class PlayerIdelState : BaseState<PlayerController>
 
     public override void OnUpdate()
     {
+        owner.Move();
         if (owner.isDashing)
             owner.stateMechine.ChangeState(StateType.dash);
     }
