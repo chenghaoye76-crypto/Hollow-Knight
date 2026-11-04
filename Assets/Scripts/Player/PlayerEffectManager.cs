@@ -179,6 +179,28 @@ public class PlayerEffectManager : MonoBehaviour
         GameObject obj = pool.GetGameObject(screamBase2);
         obj.transform.localPosition = new Vector3(0, -0.5f, 0);
     }
+    public void QuakeBlast2()
+    {
+        GameObject obj = pool.GetGameObject(quakeBlast2);
+        obj.transform.localPosition = new Vector3(0, -0.4f, 0);
+        quakePoint2L.Play();
+        quakePoint2R.Play();
+    }
+    public void QuakePillar2()
+    {
+        GameObject obj = pool.GetGameObject(quakePillar2);
+        obj.transform.localPosition = new Vector3(0, 3, 0);
+    }
+    public void QuakeMage2()
+    {
+        GameObject obj = pool.GetGameObject(quakeMega2);
+        obj.transform.localPosition = new Vector3(0, -1.4f, 0);
+    }
+    public void QuakeCharge()
+    {
+        GameObject obj = pool.GetGameObject(quakeCharge);
+        obj.transform.localPosition = new Vector3(-0.1f, -1.2f, 0);
+    }
 
 
 

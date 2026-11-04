@@ -39,11 +39,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpForce = 15.7f;
     [SerializeField] private bool isHardLand;
     [HideInInspector] public Vector2 moveInput;
-    private bool isJumpHold;
     private bool isJumpCancle;
     private bool isJumpRise;
     private float MaxVelocityY = 20.9f;
-
+    [Header("Jump details")]
+    [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
+    [SerializeField] private float highJumpLowTime = 0.08f;//最短跳跃时间
+    public float coyoteTime = 0.1f;
     [Header("Attack details")]
     public float NAchargeTime;
     public float bigSlashFallSpeed = 0.9f;
@@ -71,8 +73,12 @@ public class PlayerController : MonoBehaviour
 
     [Header("Check state")]
     [HideInInspector] public float preInputTime = 0.2f;
+    [HideInInspector] public float jumpPreInputTime = 0.4f;
     [HideInInspector] public bool attackPress;
     [HideInInspector] public bool facingRight;
+    [HideInInspector] public bool touchWall;//碰墙
+    [HideInInspector] public bool highJump;//高跳
+    [HideInInspector] public float gravityscale = 4.84f;
     [HideInInspector] public bool dashAttack = false;
     [HideInInspector] public bool skillPress;
     [HideInInspector] public bool fireBallPushStarted;
@@ -80,8 +86,11 @@ public class PlayerController : MonoBehaviour
     public bool canControl = true;
     public bool canMove = true;
     public bool canTurn = true;
-    public bool isAttacking;
     public bool isGround;
+    public bool isJumping;
+    public bool isMinJumping;
+    public bool isDoubelJumping;
+    public bool isAttacking;
     public bool isDashing;
     public bool isUsingSkill; 
 
@@ -92,16 +101,15 @@ public class PlayerController : MonoBehaviour
     public float quakeSpeed = 30f;
 
     [Header("Timer")]
-    [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
-    [SerializeField] private float lowJumpTime = 0.08f;//最短跳跃时间
-    [HideInInspector] public float gravityscale = 4.84f;
+    public float highJumpTimer;//最长跳跃时间
+    public float highJumpLowTimer;//最短跳跃时间
+    [HideInInspector] public float coyoteTimer;
     [HideInInspector] public int cycloneSlashCounter;
     [HideInInspector] public float dashTimer;//冲刺持续时间
     [HideInInspector] public float dashCDTimer;
     private float dropTime = 1.1f;
     private float dropTimer;
 
-    private bool jumpReleased;
 
     private void Awake()
     {
@@ -119,8 +127,11 @@ public class PlayerController : MonoBehaviour
         HandleAnimations();
         HandleCollison();
         CheckHardLand();
-        JumpUpdate();
         stateMechine.Update();
+        if (isGround)
+            coyoteTimer = coyoteTime;
+        else
+            coyoteTimer -= Time.deltaTime;
     }
     private void FixedUpdate()
     {
@@ -129,8 +140,8 @@ public class PlayerController : MonoBehaviour
     }
     private void OnEnable()
     {
-        playerAction.Player.Jump.performed += Jump;
-        playerAction.Player.Jump.canceled += Jump;
+        playerAction.Player.Jump.started += JumpStart;
+        playerAction.Player.Jump.canceled += JumpCancled;
         playerAction.Player.Dash.performed += Dash;
         playerAction.Player.Attack.started += AttackStart;
         playerAction.Player.Attack.canceled += AttackCancle;
@@ -141,8 +152,8 @@ public class PlayerController : MonoBehaviour
     }
     private void OnDisable()
     {
-        playerAction.Player.Jump.performed -= Jump;
-        playerAction.Player.Jump.canceled -= Jump;
+        playerAction.Player.Jump.started -= JumpStart;
+        playerAction.Player.Jump.canceled -= JumpCancled;
         playerAction.Player.Dash.performed -= Dash;
         playerAction.Player.Attack.started -= AttackStart;
         playerAction.Player.Attack.canceled -= AttackCancle;
@@ -151,6 +162,15 @@ public class PlayerController : MonoBehaviour
     }
 
     #region InputEvent
+    public void JumpStart(InputAction.CallbackContext context)
+    {
+        highJump = true;
+        Tojump();
+    }
+    public void JumpCancled(InputAction.CallbackContext context)
+    {
+        highJump = false;
+    }
     public void AttackStart(InputAction.CallbackContext context)
     {
         attackPress = true;
@@ -159,17 +179,6 @@ public class PlayerController : MonoBehaviour
     public void AttackCancle(InputAction.CallbackContext context)
     {
         attackPress = false;
-    }
-    public void Jump(InputAction.CallbackContext context)
-    {
-        if (context.performed && isGround)
-        {
-            JumpStart();
-        }
-        if (context.canceled)
-        {
-            JumpCancle();
-        }
     }
     public void SkillStart(InputAction.CallbackContext context)
     {
@@ -240,51 +249,64 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region JUMP
-
-    private void JumpStart()
+    private void Tojump()
     {
-        StartCoroutine(HighJumpTime());
-        StartCoroutine(LowJumpTime());
-        anim.SetTrigger("Jump");
-        jumpReleased = false;
-        isJumpHold = true;
+        StartCoroutine(toJump());
     }
-    private void JumpCancle()
+    IEnumerator toJump()
     {
-        jumpReleased = true;
-
-        if (isJumpCancle && isJumpRise)
+        float t = jumpPreInputTime;
+        while (t > 0)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
-            isJumpHold = false;
-            jumpReleased = false;
+            if (!canControl && stateMechine.currentStateID == StateType.douleJump)
+            {
+                t -= Time.deltaTime;
+                yield return null;
+            }
+            else
+                break;
         }
-    }
-    private void JumpUpdate()
-    {
-        isJumpRise = rb.linearVelocityY > 0f;
-        if (isJumpHold)
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
+        yield return new WaitForFixedUpdate();
+        if (!canControl && stateMechine.currentStateID == StateType.douleJump)
+            yield break;
 
-        if (isJumpCancle && jumpReleased && isJumpRise)  
+
+        if (highJump /*&& coyoteTimer > 0*/)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, 0);
-            isJumpHold = false;
-            jumpReleased = false;
+            NormalJump();
         }
-    }
-    IEnumerator LowJumpTime()
-    {
-        isJumpCancle = false;
+        if(highJump && stateMechine.currentStateID == StateType.jump)
+        {
+            DoubleJump();
+        }
 
-        yield return new WaitForSeconds(lowJumpTime);
 
-        isJumpCancle = true;
     }
-    IEnumerator HighJumpTime()
+
+    void NormalJump()
     {
-        yield return new WaitForSeconds(highJumpTime);
-        isJumpHold = false;
+        isMinJumping = true;
+        isJumping = true;
+        highJumpTimer = highJumpTime;
+        highJumpLowTimer = highJumpLowTime;
+        if (moveInput.x == 0)
+            //effectManager.JumpPuff();
+            ;
+        else
+            //effectManager.MoveJumpPuff();
+            ;
+        //audioManager.JumpSound();
+        isGround = false;
+        coyoteTimer = 0;
+    }
+
+    void DoubleJump()
+    {
+        StartCoroutine(doubleJump());
+    }
+    IEnumerator doubleJump()
+    {
+        yield return new WaitForFixedUpdate();
     }
 
 
@@ -464,10 +486,13 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
+                Debug.Log("quake");
                 anim.SetTrigger("quake2");
+                stateMechine.ChangeState(StateType.quake);
+                canMove = false;
             }
         }
-        if (moveInput.y > 0.2f)
+        else if (moveInput.y > 0.2f)
         {
             isUsingSkill = true;
             rb.linearVelocity = Vector2.zero;
@@ -486,7 +511,29 @@ public class PlayerController : MonoBehaviour
     {
         fireBallPushStarted = true;
     }
+    public void QuakeOver()
+    {
+        SkillOver();
+        StartCoroutine(quakeOver());
+    }
+    IEnumerator quakeOver()
+    {
+        yield return new WaitForSeconds(0.4f);
+        //if (!isInvincible)
+        coll.enabled = true;
+    }
+    public void StartQuake2()
+    {
+        //audioManager.QuakeDash();
+        isQuake = true;
+    }
+    public void QuakeLand2_Extra()
+    {
+        effectManager.QuakeBlast2();
+        effectManager.QuakeMage2();
 
+        //CameraImpluseManager.instance.Skill();
+    }
 
 
 
