@@ -22,5 +22,9 @@ public class PlayerIdelState : BaseState<PlayerController>
         owner.Move();
         if (owner.isDashing)
             owner.stateMechine.ChangeState(StateType.dash);
+        else if (owner.isGround && Mathf.Abs(owner.moveInput.x) > 0.01f && Mathf.Abs(owner.rb.linearVelocity.x) > 3f && owner.canMove)
+            owner.stateMechine.ChangeState(StateType.move);
+        else if (owner.isJumping || !owner.isGround)
+            owner.stateMechine.ChangeState(StateType.jump);
     }
 }

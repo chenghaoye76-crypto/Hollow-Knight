@@ -14,6 +14,13 @@ public class PlayerEffectManager : MonoBehaviour
     [SerializeField] GameObject dashAttack;
     [SerializeField] GameObject NAcharge;
     [SerializeField] GameObject NAcharged;
+    [Header("jump")]
+    [SerializeField] GameObject wallJumpPuff;
+    [SerializeField] GameObject dashPuff;
+    [SerializeField] GameObject doubleJumpEffect;
+    [SerializeField] ParticleSystem doubleWings;
+    [SerializeField] GameObject jumpPuff;
+    [SerializeField] GameObject moveJumpPuff;
     [Header("skill")]
     [SerializeField] GameObject fireBallEffect;
     [SerializeField] GameObject fireBall;
@@ -127,6 +134,24 @@ public class PlayerEffectManager : MonoBehaviour
         obj.transform.localPosition = new Vector3(-0.1f, -0.9f, 0);
     }
 
+
+
+
+
+
+
+
+    #endregion
+    #region
+    public void DoubleJumpEffect()
+    {
+        GameObject obj = pool.GetGameObject(doubleJumpEffect);
+        obj.transform.localPosition = new Vector3(0, -1, 0);
+    }
+    public void DoubleWings()
+    {
+        doubleWings.Play();
+    }
 
 
 

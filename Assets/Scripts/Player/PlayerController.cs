@@ -21,13 +21,15 @@ public class PlayerController : MonoBehaviour
             {
                 _stateMachine = new StateMechine<PlayerController>();
                 _stateMachine.AddState(StateType.idel, new PlayerIdelState(this));
+                _stateMachine.AddState(StateType.jump, new PlayerJumpState(this));
+                _stateMachine.AddState(StateType.move, new PlayerMoveState(this));
             }
             return _stateMachine;
         }
     }
     [HideInInspector] public Animator anim;
     [HideInInspector] public Rigidbody2D rb;
-    [HideInInspector] public BoxCollider2D coll;
+    [HideInInspector] public CapsuleCollider2D coll;
     [HideInInspector] public Collider2D quakeCollider;
 
 
@@ -36,8 +38,7 @@ public class PlayerController : MonoBehaviour
     private PlayerEffectManager effectManager;
     [Header("Movemnet details")]
     [SerializeField] private float moveSpeed = 8.3f;
-    [SerializeField] private float jumpForce = 15.7f;
-    [SerializeField] private bool isHardLand;
+    [SerializeField] public bool isHardLand;
     [HideInInspector] public Vector2 moveInput;
     private bool isJumpCancle;
     private bool isJumpRise;
@@ -45,7 +46,14 @@ public class PlayerController : MonoBehaviour
     [Header("Jump details")]
     [SerializeField] private float highJumpTime = 0.2f;//最长跳跃时间
     [SerializeField] private float highJumpLowTime = 0.08f;//最短跳跃时间
+    public float jumpForce = 10f;
+    public float doubleJumpForce = 10f;
+    public float wallJumpForce = 10f;
+    public float jumpMoveSpeed = 6f;
+    public float maxFallSpeed = 30f;//最大下落速度
+    public float highDoubelJumpTime;
     public float coyoteTime = 0.1f;
+    public float hardLandTime = 1.1f;
     [Header("Attack details")]
     public float NAchargeTime;
     public float bigSlashFallSpeed = 0.9f;
@@ -90,6 +98,7 @@ public class PlayerController : MonoBehaviour
     public bool isJumping;
     public bool isMinJumping;
     public bool isDoubelJumping;
+    public bool isFalling;
     public bool isAttacking;
     public bool isDashing;
     public bool isUsingSkill; 
@@ -103,6 +112,7 @@ public class PlayerController : MonoBehaviour
     [Header("Timer")]
     public float highJumpTimer;//最长跳跃时间
     public float highJumpLowTimer;//最短跳跃时间
+    [HideInInspector] public float hardLandTimer;//用于判断是否为硬着陆
     [HideInInspector] public float coyoteTimer;
     [HideInInspector] public int cycloneSlashCounter;
     [HideInInspector] public float dashTimer;//冲刺持续时间
@@ -115,7 +125,7 @@ public class PlayerController : MonoBehaviour
     {
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
-        coll = GetComponent<BoxCollider2D>();
+        coll = transform.Find("enemyCollider").GetComponent<CapsuleCollider2D>();
         quakeCollider = transform.Find("quakeCollider").GetComponent<BoxCollider2D>();
         effectManager = GetComponentInChildren<PlayerEffectManager>();
         playerAction = new PlayerAction();
@@ -271,11 +281,11 @@ public class PlayerController : MonoBehaviour
             yield break;
 
 
-        if (highJump /*&& coyoteTimer > 0*/)
+        if (highJump && coyoteTimer > 0)
         {
             NormalJump();
         }
-        if(highJump && stateMechine.currentStateID == StateType.jump)
+        else if(highJump && stateMechine.currentStateID == StateType.jump)
         {
             DoubleJump();
         }
@@ -306,12 +316,32 @@ public class PlayerController : MonoBehaviour
     }
     IEnumerator doubleJump()
     {
-        yield return new WaitForFixedUpdate();
+        isMinJumping = true;
+        float t = 0.1f;
+        while (t > 0)
+        {
+            yield return null;
+            t -= Time.deltaTime;
+            if (isGround)
+            {
+                NormalJump();
+                yield break;
+            }
+        }
+        //if (!character.Skill.DoubleJump)
+        //{
+        //    isMinJumping = false;
+        //    yield break;
+        //}
+        isDoubelJumping = true;
+        isJumping = true;
+        highJumpTimer = highDoubelJumpTime;
+        highJumpLowTimer = highJumpLowTime + 0.05f;
+        //audioManager.Swing();
+        anim.SetTrigger("doubleJump");
+        effectManager.DoubleJumpEffect();
+        effectManager.DoubleWings();
     }
-
-
-
-
 
 
 
@@ -674,6 +704,7 @@ public class PlayerController : MonoBehaviour
         AddShadeFireBall();
         AddShadeScream();
         AddShadeQuake();
+        AddDoubleJump();
     }
     public void AddNormalDash()
     {
@@ -702,6 +733,10 @@ public class PlayerController : MonoBehaviour
     public void AddShadeQuake()
     {
         stateMechine.AddState(StateType.quake, new PlayerQuakeState(this));
+    }
+    public void AddDoubleJump()
+    {
+        stateMechine.AddState(StateType.douleJump, new PlayerDoubleJumpState(this));
     }
 
 
