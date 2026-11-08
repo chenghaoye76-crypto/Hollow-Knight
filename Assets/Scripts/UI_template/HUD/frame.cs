@@ -15,6 +15,22 @@ public class frame : MonoBehaviour
 
     int CurrentSoul;
     int LinnerCount;
+    private static frame refillingFrame;
+    private Coroutine soulRefill;
+    private bool waitingToRefill;
+
+    internal static bool IsSoulRefilling => refillingFrame != null;
+
+    private void OnDisable()
+    {
+        if (soulRefill != null)
+            StopCoroutine(soulRefill);
+
+        soulRefill = null;
+        waitingToRefill = false;
+        if (refillingFrame == this)
+            refillingFrame = null;
+    }
     private void OnEnable()
     {
         animator = GetComponent<Animator>();
@@ -47,6 +63,8 @@ public class frame : MonoBehaviour
     public void IncreaseSoul(int SoulValue)
     {
         CurrentSoul = SoulValue;
+        if (waitingToRefill)
+            return;
 
         if (CurrentSoul <= 99)
         {
@@ -92,21 +110,31 @@ public class frame : MonoBehaviour
             soul.PlayDrainWave();
 
 
-        if (PreSoul >= 99)
+        if (dec > 0 && PreSoul > 99)
         {
-            soul.UpdateSoul(99 - dec);
-            StartCoroutine(decreaseSoul(CurrentSoul));
+            soul.UpdateSoul(Mathf.Max(0, 99 - dec));
+            refillingFrame = this;
+            waitingToRefill = true;
+            soulRefill = StartCoroutine(RefillSoul());
         }
         else
         {
-            soul.UpdateSoul(CurrentSoul);
+            IncreaseSoul(CurrentSoul);
         }
     }
 
-    IEnumerator decreaseSoul(int SoulValue)
+    private IEnumerator RefillSoul()
     {
         yield return new WaitForSeconds(0.5f);
-        IncreaseSoul(SoulValue);
+        waitingToRefill = false;
+        IncreaseSoul(CurrentSoul);
+
+        while (soul.DisplayedSoul != Mathf.Min(CurrentSoul, 99))
+            yield return null;
+
+        if (refillingFrame == this)
+            refillingFrame = null;
+        soulRefill = null;
     }
 
     public void SoulBurst()
