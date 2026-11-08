@@ -105,7 +105,7 @@ public class frame : MonoBehaviour
 
     IEnumerator decreaseSoul(int SoulValue)
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(2f);
         IncreaseSoul(SoulValue);
     }
 
