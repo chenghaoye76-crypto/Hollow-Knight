@@ -79,13 +79,13 @@ public class Soul : MonoBehaviour
             drainWaveAnimator.Play(DrainWaveState, 0, 0f);
     }
 
-    internal void UpdateSoul(int value)
+    internal void UpdateSoul(int value, float? refillStepTime = null)
     {
         if (coroutine != null)
             StopCoroutine(coroutine);
-        coroutine = StartCoroutine(_update(value));
+        coroutine = StartCoroutine(_update(value, refillStepTime));
     }
-    IEnumerator _update(int value)
+    IEnumerator _update(int value, float? refillStepTime)
     {
         int num = value > CurrentValue ? 1 : -1;
 
@@ -93,7 +93,7 @@ public class Soul : MonoBehaviour
         {
             while (CurrentValue != value)
             {
-                yield return new WaitForSeconds(Speed);
+                yield return new WaitForSeconds(refillStepTime ?? Speed);
                 CurrentValue += num;
                 UpdateLiquidLevel();
 
@@ -106,7 +106,7 @@ public class Soul : MonoBehaviour
         {
             while (CurrentValue != value)
             {
-                yield return new WaitForSeconds(DecreasedSpeed);
+                yield return new WaitForSeconds(refillStepTime ?? DecreasedSpeed);
                 CurrentValue += num;
                 UpdateLiquidLevel();
                 UpdateLegacySprite();

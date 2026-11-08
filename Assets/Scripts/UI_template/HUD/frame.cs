@@ -6,7 +6,8 @@ public class frame : MonoBehaviour
 {
     private const int MainCapacity = 99;
     private const int VesselCapacity = 33;
-    private const float RefillDelay = 0.5f;
+    private const float RefillDelay = 0.75f;
+    private const float VesselTransferDuration = 0.25f;
     Animator animator;
 
     [SerializeField]
@@ -86,16 +87,19 @@ public class frame : MonoBehaviour
         if (Time.time < refillAt)
             return;
 
-        int transferred = Mathf.Min(reserveSoul, MainCapacity - mainSoul);
+        int topVesselSoul = (reserveSoul - 1) % VesselCapacity + 1;
+        int transferred = Mathf.Min(topVesselSoul, MainCapacity - mainSoul);
         mainSoul += transferred;
         reserveSoul -= transferred;
-        refillAt = float.PositiveInfinity;
-        UpdateSoulDisplay();
+        refillAt = reserveSoul > 0 && mainSoul < MainCapacity
+            ? Time.time + VesselTransferDuration
+            : float.PositiveInfinity;
+        UpdateSoulDisplay(VesselTransferDuration / transferred);
     }
 
-    private void UpdateSoulDisplay()
+    private void UpdateSoulDisplay(float? refillStepTime = null)
     {
-        soul.UpdateSoul(mainSoul);
+        soul.UpdateSoul(mainSoul, refillStepTime);
 
         // The prefab lists the vessels from the lowest position to the highest.
         for (int i = 0; i < LinnerCount; i++)
