@@ -485,9 +485,6 @@ public class PlayerController : MonoBehaviour
     }
     private void ToSkill()
     {
-        if (frame.IsSoulRefilling)
-            return;
-
         //if (character.Attribute.CurrentSoul < 33)
         //    return;
         StartCoroutine(skillPressJudge());
@@ -508,8 +505,6 @@ public class PlayerController : MonoBehaviour
                 break;
         }
         if (!canControl /*|| isMap || isMinJumping*/)
-            yield break;
-        if (frame.IsSoulRefilling)
             yield break;
         if (moveInput.y < -0.2f)
         {

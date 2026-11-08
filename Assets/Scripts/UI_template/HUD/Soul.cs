@@ -25,7 +25,6 @@ public class Soul : MonoBehaviour
     private bool FirstUpdate;
     private frame Frame;
     private int CurrentValue;
-    internal int DisplayedSoul => CurrentValue;
     private Coroutine coroutine;
     [SerializeField] private Animator drainWaveAnimator;
     [SerializeField] private Animator soulFullAnimator;
