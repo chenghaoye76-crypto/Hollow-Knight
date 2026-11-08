@@ -1143,6 +1143,7 @@ MonoBehaviour:
   Speed: 0.03
   DecreasedSpeed: 0.01
   drainWaveAnimator: {fileID: 0}
+  soulFullAnimator: {fileID: 2819254411317229127}
 --- !u!1 &7816021059406519756
 GameObject:
   m_ObjectHideFlags: 0

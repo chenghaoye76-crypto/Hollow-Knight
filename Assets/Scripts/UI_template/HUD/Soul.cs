@@ -27,8 +27,10 @@ public class Soul : MonoBehaviour
     private int CurrentValue;
     private Coroutine coroutine;
     [SerializeField] private Animator drainWaveAnimator;
+    [SerializeField] private Animator soulFullAnimator;
 
     private static readonly int DrainWaveState = Animator.StringToHash("Base Layer.DrainWave");
+    private static readonly int SoulFullState = Animator.StringToHash("Base Layer.full");
     private static readonly int FillProperty = Shader.PropertyToID("_Fill");
     private Material liquidMaterial;
     private RectTransform fillRect;
@@ -131,7 +133,12 @@ public class Soul : MonoBehaviour
         if (liquidMaterial != null)
             liquidMaterial.SetFloat(FillProperty, Mathf.Clamp01(ratio));
         else
-            fillRect.anchoredPosition = ToAnchorPosition(Vector3.Lerp(emptyPos, fullPos, ratio));
+            fillRect.anchoredPosition = CurrentValue == 99
+                ? fullAnchorPosition
+                : ToAnchorPosition(Vector3.Lerp(emptyPos, fullPos, ratio));
+
+        if (CurrentValue == 99 && soulFullAnimator != null)
+            soulFullAnimator.Play(SoulFullState, 0, 0f);
     }
 
     private void UpdateLegacySprite()
