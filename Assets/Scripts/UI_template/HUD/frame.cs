@@ -1,11 +1,12 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class frame : MonoBehaviour
 {
-    //攻击 获取的灵魂 5点，施放法术消耗20点，最大60点，小灵魂槽20点
+    private const int MainCapacity = 99;
+    private const int VesselCapacity = 33;
+    private const float RefillDelay = 0.5f;
     Animator animator;
 
     [SerializeField]
@@ -13,7 +14,9 @@ public class frame : MonoBehaviour
     [SerializeField]
     private Soul soul;
 
-    int CurrentSoul;
+    private int mainSoul;
+    private int reserveSoul;
+    private float refillAt = float.PositiveInfinity;
     int LinnerCount;
     private void OnEnable()
     {
@@ -22,7 +25,9 @@ public class frame : MonoBehaviour
     public void Init(int CurrentSoul, int linnerCount)
     {
         soul.Init(this);
-        this.CurrentSoul = CurrentSoul;
+        mainSoul = Mathf.Min(CurrentSoul, MainCapacity);
+        reserveSoul = CurrentSoul - mainSoul;
+        refillAt = float.PositiveInfinity;
         LinnerCount = linnerCount;
     }
 
@@ -42,71 +47,63 @@ public class frame : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
         }
 
-        IncreaseSoul(CurrentSoul);
-    }
-    public void IncreaseSoul(int SoulValue)
-    {
-        CurrentSoul = SoulValue;
-
-        if (CurrentSoul <= 99)
-        {
-            soul.UpdateSoul(SoulValue);
-
-            for (int i = 0; i < LinnerCount; i++)
-            {
-                linnerSoul[i].SetValue(0);
-            }
-        }
-        else
-        {
-            soul.UpdateSoul(99);
-
-            int LinnerSoulValue = CurrentSoul - 99;
-            int LinnerSoulCount = Mathf.FloorToInt(LinnerSoulValue / 8);
-
-            for (int i = 0; i < LinnerCount; i++)
-            {
-                if (LinnerSoulCount == 0)
-                    linnerSoul[i].SetValue(0);
-                if (LinnerSoulCount <= 4)
-                {
-                    linnerSoul[i].SetValue(LinnerSoulCount);
-                    LinnerSoulCount = 0;
-                }
-                else
-                {
-                    linnerSoul[i].SetValue(4);
-                    LinnerSoulCount -= 4;
-                }
-            }
-        }
+        UpdateSoulDisplay();
     }
 
-    public void DecreaseSoul(int SoulValue)
+    public void IncreaseSoul(int soulValue)
     {
-        int PreSoul = CurrentSoul;
-        CurrentSoul = SoulValue;
+        int gain = soulValue - (mainSoul + reserveSoul);
+        if (gain <= 0)
+            return;
 
-        int dec = PreSoul - CurrentSoul;
-        if (dec > 0)
-            soul.PlayDrainWave();
+        int addedToMain = Mathf.Min(gain, MainCapacity - mainSoul);
+        mainSoul += addedToMain;
+        reserveSoul += gain - addedToMain;
 
+        if (mainSoul == MainCapacity)
+            refillAt = float.PositiveInfinity;
 
-        if (PreSoul >= 99)
-        {
-            soul.UpdateSoul(99 - dec);
-            StartCoroutine(decreaseSoul(CurrentSoul));
-        }
-        else
-        {
-            soul.UpdateSoul(CurrentSoul);
-        }
+        UpdateSoulDisplay();
     }
 
-    IEnumerator decreaseSoul(int SoulValue)
+    public void DecreaseSoul(int soulValue)
     {
-        yield return new WaitForSeconds(0.5f);
-        IncreaseSoul(SoulValue);
+        int spent = mainSoul + reserveSoul - soulValue;
+        if (spent <= 0)
+            return;
+
+        soul.PlayDrainWave();
+        int spentFromMain = Mathf.Min(spent, mainSoul);
+        mainSoul -= spentFromMain;
+        reserveSoul -= spent - spentFromMain;
+
+        refillAt = reserveSoul > 0 ? Time.time + RefillDelay : float.PositiveInfinity;
+        UpdateSoulDisplay();
+    }
+
+    private void Update()
+    {
+        if (Time.time < refillAt)
+            return;
+
+        int transferred = Mathf.Min(reserveSoul, MainCapacity - mainSoul);
+        mainSoul += transferred;
+        reserveSoul -= transferred;
+        refillAt = float.PositiveInfinity;
+        UpdateSoulDisplay();
+    }
+
+    private void UpdateSoulDisplay()
+    {
+        soul.UpdateSoul(mainSoul);
+
+        // The prefab lists the vessels from the lowest position to the highest.
+        for (int i = 0; i < LinnerCount; i++)
+        {
+            int amount = Mathf.Clamp(reserveSoul - i * VesselCapacity, 0, VesselCapacity);
+            int quarters = amount == VesselCapacity ? 4 : Mathf.Min(amount / 8, 3);
+            linnerSoul[i].SetValue(quarters);
+        }
     }
 
     public void SoulBurst()
