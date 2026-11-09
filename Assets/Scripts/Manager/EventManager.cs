@@ -51,7 +51,7 @@ public class EventManager : MonoBehaviour
             voidEventDic[eventName].Add(name, action);
         }
     }
-    public void RemoveVoidAction(string eventName)
+    public void RemoveVoidAction(string eventName, string name)
     {
         if (!voidEventDic.ContainsKey(eventName))
             return;
@@ -72,19 +72,84 @@ public class EventManager : MonoBehaviour
             action?.Invoke();
         }
     }
+    #endregion 
 
+    #region TransformEvent
+    public void AddTransformAction(string eventName, string name, UnityAction<Transform> action)
+    {
+        if (transformEventDic.ContainsKey(eventName))
+        {
+            transformEventDic[eventName].Add(name, action);
+        }
+        else
+        {
+            transformEventDic.Add(eventName, new Dictionary<string, UnityAction<Transform>>());
+            transformEventDic[eventName].Add(name, action);
+        }
+    }
 
+    public void RemoveTransformAction(string eventName, string name)
+    {
+        if (!transformEventDic.ContainsKey(eventName))
+            return;
+        transformEventDic[eventName].Remove(name);
+        if (transformEventDic[eventName].Count == 0)
+            RemoveTransformEvent(eventName);
+    }
+    public void RemoveTransformEvent(string eventName)
+    {
+        if (!transformEventDic.ContainsKey(eventName))
+            return;
+        transformEventDic.Remove(eventName);
+    }
+    public void TransformEventInvoke(string eventName, Transform trans)
+    {
+        if (!transformEventDic.ContainsKey(eventName))
+            return;
+        foreach (UnityAction<Transform> action in transformEventDic[eventName].Values)
+        {
+            action.Invoke(trans);
+        }
+    }
+#endregion
 
-
-
-
-
-
-
-
-
-
-
+    #region IntEvent
+    public void AddIntAction(string eventName, string name, UnityAction<int> action)
+    {
+        if (intEventDic.ContainsKey(eventName))
+        {
+            intEventDic[eventName].Add(name, action);
+        }
+        else
+        {
+            intEventDic.Add(eventName, new Dictionary<string, UnityAction<int>>());
+            intEventDic[eventName].Add(name, action);
+        }
+    }
+    public void RemoveIntAction(string eventName, string name)
+    {
+        if (!intEventDic.ContainsKey(eventName))
+            return;
+        intEventDic[eventName].Remove(name);
+        if (intEventDic[eventName].Count == 0)
+            RemoveIntEvent(eventName);
+    }
+    public void RemoveIntEvent(string eventName)
+    {
+        if (!intEventDic.ContainsKey(eventName))
+            return;
+        intEventDic.Remove(eventName);
+    }
+    public void IntEventInvoke(string eventName, int n)
+    {
+        if (!intEventDic.ContainsKey(eventName))
+            return;
+        foreach (UnityAction<int> action in intEventDic[eventName].Values)
+        {
+            if (action != null)
+                action.Invoke(n);
+        }
+    }
     #endregion
 
 

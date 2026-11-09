@@ -25,7 +25,7 @@ public class NAcharge : MonoBehaviour
 
     private void OnDisable()
     {
-        EventManager.instance.RemoveVoidAction("NAChargeOver");
+        EventManager.instance.RemoveVoidEvent("NAChargeOver");
     }
 
 

@@ -4,6 +4,16 @@ public class PlayerEffectManager : MonoBehaviour
 {
     private ObjectPool pool;
     private PlayerController playerController;
+    [Header("hurt")]
+    [SerializeField] GameObject hurtSoul;
+    [SerializeField] GameObject hurtLight;
+    [SerializeField] GameObject hurtBlackGhost;
+    [SerializeField] GameObject hurtBlackPoint;
+    [SerializeField] GameObject deathEffect;
+    [SerializeField] GameObject deadBlackGhost;
+    [SerializeField] GameObject deadBlackPoint;
+    [SerializeField] GameObject deadBlackPointEx;
+    [SerializeField] GameObject head;
     [Header("attack")]
     [SerializeField] GameObject upAttack;
     [SerializeField] GameObject downAttack;
@@ -21,6 +31,9 @@ public class PlayerEffectManager : MonoBehaviour
     [SerializeField] ParticleSystem doubleWings;
     [SerializeField] GameObject jumpPuff;
     [SerializeField] GameObject moveJumpPuff;
+    [Header("focus")]
+    [SerializeField] GameObject burstEffect;
+    [SerializeField] GameObject focusEffect;
     [Header("skill")]
     [SerializeField] GameObject fireBallEffect;
     [SerializeField] GameObject fireBall;
@@ -55,10 +68,111 @@ public class PlayerEffectManager : MonoBehaviour
 
     private void OnDisable()
     {
-        
+        EventManager.instance.RemoveVoidAction("SoulBrust", name);
+    }
+    #region Hurt
+    public void Hurt()
+    {
+        if (hurtBlackGhost != null)
+            HurtBlackGhost();
+
+        HurtBlackPoint();
+        HurtLight();
+        HurtSoul();
     }
 
+    private void HurtBlackGhost()
+    {
+        SlashGhostEffect effect1 = pool.GetGameObject(hurtBlackGhost).GetComponent<SlashGhostEffect>();
+        effect1.transform.localPosition = Vector3.zero;
+        effect1.AngleOffset = 0;
 
+        SlashGhostEffect effect2 = pool.GetGameObject(hurtBlackGhost).GetComponent<SlashGhostEffect>();
+        effect2.transform.localPosition = Vector3.zero;
+        effect2.AngleOffset = 180;
+
+        effect1.Play();
+        effect2.Play();
+    }
+    private void HurtBlackPoint()
+    {
+        ParticleSystem particle1 = pool.GetGameObject(hurtBlackPoint).GetComponent<ParticleSystem>();
+        particle1.transform.localPosition = Vector3.zero;
+        particle1.transform.localScale = new Vector3(Mathf.Abs(particle1.transform.localScale.x), particle1.transform.localScale.y, particle1.transform.localScale.z);
+
+        ParticleSystem particle2 = pool.GetGameObject(hurtBlackPoint).GetComponent<ParticleSystem>();
+        particle2.transform.localPosition = Vector3.zero;
+        particle2.transform.localScale = new Vector3(-Mathf.Abs(particle2.transform.localScale.x), particle2.transform.localScale.y, particle2.transform.localScale.z);
+
+        particle1.Play();
+        particle2.Play();
+    }
+    private void HurtLight()
+    {
+        GameObject obj = pool.GetGameObject(hurtLight);
+        obj.transform.localPosition = new Vector3(0, 0, 0);
+        obj.transform.localScale = new Vector3(Mathf.Abs(obj.transform.localScale.x), Mathf.Abs(obj.transform.localScale.y), Mathf.Abs(obj.transform.localScale.z));
+
+        float rotationZ = UnityEngine.Random.Range(-30, 30);
+        obj.transform.rotation = Quaternion.Euler(0, 0, rotationZ);
+    }
+    private void HurtSoul()
+    {
+        GameObject obj = pool.GetGameObject(hurtSoul);
+        obj.transform.localPosition = new Vector3(0, 0, 0);
+    }
+    #endregion
+
+    #region Dead
+    private void DeadEffect()
+    {
+        GameObject obj = pool.GetGameObject(deathEffect);
+        obj.transform.localPosition = new Vector3(0, 0, 0);
+    }
+
+    private void DeadBlackGhost()
+    {
+        SlashGhostEffect effect = pool.GetGameObject(deadBlackGhost).GetComponent<SlashGhostEffect>();
+        effect.transform.localPosition = Vector3.zero;
+        effect.Play();
+    }
+
+    private void DeadBlackPoint()
+    {
+        ParticleSystem particle = pool.GetGameObject(deadBlackPoint).GetComponent<ParticleSystem>();
+        particle.transform.localPosition = Vector3.zero;
+        particle.Play();
+    }
+
+    private void DeadBlackPointEx()
+    {
+        ParticleSystem particle1 = pool.GetGameObject(deadBlackPointEx).GetComponent<ParticleSystem>();
+        particle1.transform.localPosition = Vector3.zero;
+        particle1.transform.localScale = new Vector3(Mathf.Abs(particle1.transform.localScale.x), particle1.transform.localScale.y, particle1.transform.localScale.z);
+        particle1.Play();
+
+        ParticleSystem particle2 = pool.GetGameObject(deadBlackPointEx).GetComponent<ParticleSystem>();
+        particle2.transform.localPosition = Vector3.zero;
+        particle1.transform.localScale = new Vector3(-Mathf.Abs(particle1.transform.localScale.x), particle1.transform.localScale.y, particle1.transform.localScale.z);
+        particle2.Play();
+    }
+
+    public void Head()
+    {
+        GameObject obj = GameObject.Instantiate(head);
+        obj.transform.position = transform.position + new Vector3(0, 1.347f, 0);
+    }
+
+    public void Dead()
+    {
+        DeadBlackPoint();
+        DeadEffect();
+        DeadBlackGhost();
+        HurtLight();
+        DeadBlackPoint();
+        DeadBlackPointEx();
+    }
+    #endregion
 
     #region Attack
 
@@ -142,26 +256,72 @@ public class PlayerEffectManager : MonoBehaviour
 
 
     #endregion
-    #region
+
+    #region Jump
+    public void WallJumpPuff()
+    {
+        GameObject obj = pool.GetGameObject(wallJumpPuff);
+        obj.transform.SetParent(null);
+        obj.transform.position = transform.position;
+        if (playerController.transform.localScale.x < 0)
+        {
+            obj.transform.localScale = new Vector3(-Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+            obj.transform.localPosition += new Vector3(0.5f, -0.5f, 0);
+        }
+        else
+        {
+            obj.transform.localScale = new Vector3(Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+            obj.transform.localPosition += new Vector3(-0.5f, -0.5f, 0);
+        }
+    }
+
     public void DoubleJumpEffect()
     {
         GameObject obj = pool.GetGameObject(doubleJumpEffect);
         obj.transform.localPosition = new Vector3(0, -1, 0);
     }
+
+    public void JumpPuff()
+    {
+        GameObject obj = pool.GetGameObject(jumpPuff);
+        obj.transform.SetParent(null);
+        obj.transform.position = transform.position;
+        if (playerController.transform.localScale.x < 0)
+            obj.transform.localScale = new Vector3(-Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+        else
+            obj.transform.localScale = new Vector3(Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+        obj.transform.localPosition += new Vector3(0f, -0.8f, 0);
+    }
+
+    public void MoveJumpPuff()
+    {
+        GameObject obj = pool.GetGameObject(moveJumpPuff);
+        obj.transform.SetParent(null);
+        obj.transform.position = transform.position;
+        if (playerController.transform.localScale.x < 0)
+            obj.transform.localScale = new Vector3(-Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+        else
+            obj.transform.localScale = new Vector3(Mathf.Abs(obj.transform.localScale.x), obj.transform.localScale.y, obj.transform.localScale.z);
+        obj.transform.localPosition += new Vector3(0f, -0.4f, 0);
+    }
+
     public void DoubleWings()
     {
         doubleWings.Play();
     }
-
-
-
-
-
-
-
     #endregion
 
     #region Skill
+    public void BrustEffect()
+    {
+        GameObject obj = pool.GetGameObject(burstEffect);
+        obj.transform.localPosition = new Vector3(0, -0.5f, 0);
+    }
+    public void FocusEffect()
+    {
+        GameObject obj = pool.GetGameObject(focusEffect);
+        obj.transform.localPosition = new Vector3(0, 0.7f, 0);
+    }
     public void FireBall2()
     {
         GameObject obj = GameObject.Instantiate(fireBall2);

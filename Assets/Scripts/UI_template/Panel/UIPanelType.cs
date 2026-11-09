@@ -1,0 +1,72 @@
+﻿public enum UIPanelType
+{
+    MainMenuPanel,
+    SystemSettingPanel,
+    ExitPanel,
+    GameOptionPanel,
+    AudioPanel,
+    VedioPanel,
+    RofilePanel,
+    BrightnessPanel,
+    ScreenScalePanel,
+    ControllerPanel,
+    KeyboardPanel,
+    AchievementPanel,
+    ExtraPanel,
+    ModeSelectPanel,
+    TheGrimmTroupePanel,
+    GodMasterPanel,
+    LifeBloodPanel,
+    HiddenDreamPanel,
+    QuitToMenuPanel,
+    PausePanel,
+    GamePanel,
+    MothwingCloakPanel,
+    MantisClawPanel,
+    CrystalHeartPanel,
+    VengefulSpiritPanel,
+    DesolateDivePanel,
+    HowlingWraithsPanel,
+    ShadeSoulPanel,
+    DescendingDarkPanel,
+    AbyssShriekPanel,
+    MonarchWingsPanel,
+    ShadeCloakPanel,
+    GreatSlashPanel,
+    DashSlashPanel,
+    CycloneSlashPanel,
+    FocusPanel,
+    DiologuePanel,
+    PackagePanel,
+    MobileControlPanel
+    //TOADD:添加面板
+}
+
+public enum MenuBGType
+{
+    VoidHeartBG,
+    InfectedBG,
+    ClassicBG,
+    TheGrimmTroupeBG,
+    GodMasterBG,
+    LifeBloodBG,
+    HiddenDreamBG
+}
+
+public enum GameSceneType
+{
+    blank,
+    room_nailsmith,
+    sly_shop,
+    Iselda_shop,
+    FKnight_room,
+    dirtmouth,
+    divine_room,
+    bretta_room,
+    blueblood_jonyroom,
+    frogotten_crossRoad1,
+    Stag_room,
+    mantisLords_room,
+    watcherKnight_room,
+}
+

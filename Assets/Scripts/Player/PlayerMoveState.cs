@@ -20,7 +20,7 @@ public class PlayerMoveState : BaseState<PlayerController>
 
     public override void OnExit()
     {
-        //owner.audioManager.StopSound();
+        owner.audioManager.StopSound();
     }
 
     public override void OnUpdate()
@@ -33,7 +33,7 @@ public class PlayerMoveState : BaseState<PlayerController>
 
         if (t1 > 0.1f && t1 < 2f)
         {
-            //owner.audioManager.RunSound();
+            owner.audioManager.RunSound();
             t1 = 3;
         }
         if (owner.isDashing)

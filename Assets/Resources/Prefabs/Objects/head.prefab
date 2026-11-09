@@ -148,11 +148,11 @@ PolygonCollider2D:
       - {x: 0.39030516, y: -0.5209324}
       - {x: 0.2641186, y: -0.606248}
       - {x: -0.32355928, y: -0.59777254}
-      - {x: -0.4095502, y: -0.4154697}
-      - {x: -0.29737675, y: -0.23838255}
-      - {x: -0.36579657, y: -0.18986371}
-      - {x: -0.24461633, y: -0.030999668}
-      - {x: -0.5293379, y: -0.13618606}
+      - {x: -0.3047638, y: -0.37835795}
+      - {x: -0.2558986, y: -0.27549478}
+      - {x: -0.25446033, y: -0.052331954}
+      - {x: -0.3166569, y: -0.009169109}
+      - {x: -0.5839138, y: -0.1645655}
       - {x: -0.61022496, y: -0.44336477}
       - {x: -0.57687175, y: -0.5173075}
       - {x: -0.56439894, y: -0.57515144}
@@ -163,7 +163,7 @@ PolygonCollider2D:
       - {x: 0.4201818, y: -1.1832017}
       - {x: 0.45394152, y: -0.7249689}
       - {x: 0.6002583, y: -0.4159661}
-  m_UseDelaunayMesh: 1
+  m_UseDelaunayMesh: 0
 --- !u!50 &3400334201079570599
 Rigidbody2D:
   serializedVersion: 5
@@ -177,9 +177,9 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0
+  m_LinearDamping: 1
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 4.84
   m_Material: {fileID: 6200000, guid: 85f2eca0a6f80714a9ee90eca80fb179, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -188,6 +188,6 @@ Rigidbody2D:
     serializedVersion: 2
     m_Bits: 0
   m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_SleepingMode: 0
+  m_CollisionDetection: 1
   m_Constraints: 0

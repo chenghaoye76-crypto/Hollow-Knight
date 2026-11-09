@@ -24,7 +24,10 @@ public class Soul : MonoBehaviour
 
     private bool FirstUpdate;
     private frame Frame;
+    internal const int RefillPointsPerStep = 2;
+    private const float RefillStepDelayScale = 0.5f;
     private int CurrentValue;
+    internal int DisplayedSoul => CurrentValue;
     private Coroutine coroutine;
     [SerializeField] private Animator drainWaveAnimator;
     [SerializeField] private Animator soulFullAnimator;
@@ -33,6 +36,7 @@ public class Soul : MonoBehaviour
     private static readonly int SoulFullState = Animator.StringToHash("Base Layer.full");
     private static readonly int FillProperty = Shader.PropertyToID("_Fill");
     private Material liquidMaterial;
+    private float liquidFill;
     private RectTransform fillRect;
     private Vector2 fullAnchorPosition;
 
@@ -60,7 +64,7 @@ public class Soul : MonoBehaviour
     internal void Init(frame frame)
     {
         if (liquidMaterial != null)
-            liquidMaterial.SetFloat(FillProperty, 0f);
+            SetLiquidFill(0f);
         else
             fillRect.anchoredPosition = ToAnchorPosition(EmptyPos);
         Frame = frame;
@@ -79,25 +83,33 @@ public class Soul : MonoBehaviour
             drainWaveAnimator.Play(DrainWaveState, 0, 0f);
     }
 
-    internal void UpdateSoul(int value)
+    internal void UpdateSoul(int value, bool isRefill = false)
     {
         if (coroutine != null)
             StopCoroutine(coroutine);
-        coroutine = StartCoroutine(_update(value));
+        coroutine = StartCoroutine(_update(value, isRefill));
     }
-    IEnumerator _update(int value)
+    IEnumerator _update(int value, bool isRefill)
     {
+        if (liquidMaterial != null && value / 99f < liquidFill)
+        {
+            yield return AnimateLiquidDrain(value);
+            FirstUpdate = false;
+            yield break;
+        }
+
         int num = value > CurrentValue ? 1 : -1;
 
         if (num > 0 && !FirstUpdate)
         {
             while (CurrentValue != value)
             {
-                yield return new WaitForSeconds(Speed);
-                CurrentValue += num;
+                yield return new WaitForSeconds(isRefill ? Speed * RefillStepDelayScale : Speed);
+                int previousValue = CurrentValue;
+                CurrentValue += isRefill ? Mathf.Min(RefillPointsPerStep, value - CurrentValue) : num;
                 UpdateLiquidLevel();
 
-                if (CurrentValue % 33 == 0 && num > 0)
+                if (CurrentValue / 33 > previousValue / 33)
                     Frame.SoulBurst();
                 UpdateLegacySprite();
             }
@@ -106,8 +118,10 @@ public class Soul : MonoBehaviour
         {
             while (CurrentValue != value)
             {
-                yield return new WaitForSeconds(DecreasedSpeed);
-                CurrentValue += num;
+                yield return new WaitForSeconds(isRefill && num > 0 ? Speed * RefillStepDelayScale : DecreasedSpeed);
+                CurrentValue += isRefill && num > 0
+                    ? Mathf.Min(RefillPointsPerStep, value - CurrentValue)
+                    : num;
                 UpdateLiquidLevel();
                 UpdateLegacySprite();
             }
@@ -127,11 +141,40 @@ public class Soul : MonoBehaviour
             fillRect.anchoredPosition = ToAnchorPosition(EmptyPos);
     }
 
+    private IEnumerator AnimateLiquidDrain(int value)
+    {
+        float startFill = liquidFill;
+        float targetFill = value / 99f;
+        float drainedFill = startFill - targetFill;
+        float duration = Mathf.Clamp(drainedFill * 99f * DecreasedSpeed, 0.18f, 0.42f);
+        float rebound = Mathf.Min(0.022f, drainedFill * 0.12f);
+
+        for (float elapsed = 0f; elapsed < duration;)
+        {
+            yield return null;
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+            float fall = Mathf.SmoothStep(startFill, targetFill, progress);
+            float sway = Mathf.Sin(progress * 2f * Mathf.PI) * Mathf.Sin(progress * Mathf.PI);
+            SetLiquidFill(Mathf.Min(startFill, fall + rebound * sway));
+            CurrentValue = Mathf.RoundToInt(liquidFill * 99f);
+        }
+
+        CurrentValue = value;
+        SetLiquidFill(targetFill);
+    }
+
+    private void SetLiquidFill(float fill)
+    {
+        liquidFill = Mathf.Clamp01(fill);
+        liquidMaterial.SetFloat(FillProperty, liquidFill);
+    }
+
     private void UpdateLiquidLevel()
     {
         float ratio = CurrentValue / 99f;
         if (liquidMaterial != null)
-            liquidMaterial.SetFloat(FillProperty, Mathf.Clamp01(ratio));
+            SetLiquidFill(ratio);
         else
             fillRect.anchoredPosition = CurrentValue == 99
                 ? fullAnchorPosition

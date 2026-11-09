@@ -5,7 +5,7 @@ using UnityEngine;
 public enum StateType
 {
     //Player
-    idel, move, jump, douleJump, upPush, hurt, spikeHurt, death, dash, superDash, climb, fireBall, scream, quake, foucus, bigSlash, cycloneSlash, dashSlash, sit, blank,
+    idel, move, jump, douleJump, upPush, hurt, spikeHurt, death, dash, superDash, climb, fireBall, scream, quake, focus, bigSlash, cycloneSlash, dashSlash, sit, blank,
     //crawler
     crawlerWalk, crawlerDead,
     //huskWarrior

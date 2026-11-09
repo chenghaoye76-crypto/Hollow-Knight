@@ -66,12 +66,12 @@ public class PlayerJumpState : BaseState<PlayerController>
             owner.isHardLand = true;
 
         //角色速度
-       // if (!owner.isWallJumping)
+        if (!owner.isWallJumping)
             owner.Move();
 
         if (owner.highJumpLowTimer > 0 || owner.highJumpTimer > 0f && owner.highJump)
             owner.rb.linearVelocity = new Vector2(owner.rb.linearVelocity.x, owner.jumpForce);
-        else if ((/*owner.Checkfloor() || */owner.rb.linearVelocity.y > 0f && owner.highJump == false) /*&& !owner.isWallJumping*/)
+        else if ((owner.Checkfloor() || owner.rb.linearVelocity.y > 0f && owner.highJump == false) && !owner.isWallJumping)
         {
             owner.rb.linearVelocity = new Vector2(owner.rb.linearVelocity.x, 0f);
         }
@@ -83,17 +83,25 @@ public class PlayerJumpState : BaseState<PlayerController>
                 owner.isFalling = true;
                 owner.SetGravityScale(owner.gravityscale);
             }
-        }
-        //状态切换
 
+            owner.rb.linearVelocity = new Vector2(owner.rb.linearVelocity.x, Mathf.Max(-owner.maxFallSpeed, owner.rb.linearVelocity.y));
+        }
+        else
+            owner.SetGravityScale(owner.gravityscale);
+
+        if (owner.isWallJumping)
+            return;
+
+
+        //状态切换
         if (owner.isDashing)
             owner.stateMechine.ChangeState(StateType.dash);
-        if (owner.isFalling && owner.isGround) 
+        else if (owner.isFalling && owner.isGround) 
         {
             if (owner.isHardLand)
             {
                 owner.stateMechine.ChangeState(StateType.idel);
-                //owner.audioManager.HardLandSound();
+                owner.audioManager.HardLandSound();
             }
             else
             {
@@ -101,13 +109,13 @@ public class PlayerJumpState : BaseState<PlayerController>
                     owner.stateMechine.ChangeState(StateType.idel);
                 else
                     owner.stateMechine.ChangeState(StateType.move);
-                //owner.audioManager.SoftLandSound();
+                owner.audioManager.SoftLandSound();
             }
         }
-
-
-
-
-
+        else if (owner.touchWall && owner.moveInput.x != 0 &&
+                 (owner.stateMechine.previousStateID != StateType.idel &&
+                     owner.stateMechine.previousStateID != StateType.move || owner.isFalling))
+            owner.stateMechine.ChangeState(StateType.climb);
     }
+
 }
